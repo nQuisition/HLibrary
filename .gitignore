@@ -1,0 +1,14 @@
+/*.txt
+/*.log
+/build.xml
+/icon.gif
+/manifest.mf
+
+/build/
+/dist/
+/lib/
+/nbproject/
+/test/
+
+/src/simpleserver/
+/src/com/nquisition/hlibrary/exh/

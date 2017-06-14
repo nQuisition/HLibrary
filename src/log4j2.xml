@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="OFF">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%highlight{[%d{MMM dd yyyy HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg%n}{FATAL=red, ERROR=red bright, WARN=yellow bright, INFO=blue bright, DEBUG=green bright, TRACE=black}" />
+        </Console>
+        <HConsoleAppender name="HConsole">
+            <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg"/>
+        </HConsoleAppender>
+        <File name="RunsFile" fileName="C:\Test\log_runs.txt" immediateFlush="true" append="true">
+            <PatternLayout pattern="[%d{MMM dd yyyy HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg%n"/>
+        </File>
+        <File name="GlobalFile" fileName="C:\Test\log_global.txt" immediateFlush="true" append="true">
+            <PatternLayout pattern="[%d{MMM dd yyyy HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg%n"/>
+        </File>
+         <File name="LocalFile" fileName="C:\Test\log_local.txt" immediateFlush="true" append="true">
+            <PatternLayout pattern="[%d{MMM dd yyyy HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="debug">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="HConsole" />
+        </Root>
+        
+        <Logger name="com.nquisition.hlibrary.HLibrary" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+        </Logger>
+        
+        <Logger name="com.nquisition.hlibrary.console.HConsole" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+        </Logger>
+        
+        <Logger name="com.nquisition.hlibrary.model.Database.local" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+            <AppenderRef ref="LocalFile" level="info" />
+        </Logger>
+        <Logger name="com.nquisition.hlibrary.model.Database.global" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+            <AppenderRef ref="GlobalFile" level="info" />
+        </Logger>
+        
+        <Logger name="com.nquisition.hlibrary.ui.FolderViewer.local" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+            <AppenderRef ref="LocalFile" level="info" />
+        </Logger>
+        <Logger name="com.nquisition.hlibrary.ui.FolderViewer.global" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+            <AppenderRef ref="GlobalFile" level="info" />
+        </Logger>
+        
+        <Logger name="com.nquisition.hlibrary.ui.GalleryViewer.local" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+            <AppenderRef ref="LocalFile" level="info" />
+        </Logger>
+        <Logger name="com.nquisition.hlibrary.ui.GalleryViewer.global" level="debug">
+            <AppenderRef ref="RunsFile" level="info" />
+            <AppenderRef ref="GlobalFile" level="info" />
+        </Logger>
+    </Loggers>
+</Configuration>
