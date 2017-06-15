@@ -1,9 +1,14 @@
 /*.txt
 /*.log
+/.classpath
+/.project
 /build.xml
+/build.fxbuild
 /icon.gif
 /manifest.mf
 
+/.settings/
+/bin/
 /build/
 /dist/
 /lib/

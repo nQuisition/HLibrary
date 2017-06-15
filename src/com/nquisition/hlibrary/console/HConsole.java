@@ -5,10 +5,8 @@
  */
 package com.nquisition.hlibrary.console;
 
-import com.nquisition.hlibrary.ui.GalleryViewer;
 import com.nquisition.hlibrary.ui.HConsoleStage;
 import java.util.*;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="OFF">
+<Configuration status="OFF" packages="com.nquisition.hlibrary.console">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%highlight{[%d{MMM dd yyyy HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg%n}{FATAL=red, ERROR=red bright, WARN=yellow bright, INFO=blue bright, DEBUG=green bright, TRACE=black}" />
+            <PatternLayout pattern="%highlight{[%d{HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg%n}{FATAL=red, ERROR=red bright, WARN=yellow bright, INFO=blue bright, DEBUG=green bright, TRACE=black}" />
         </Console>
         <HConsoleAppender name="HConsole">
             <PatternLayout pattern="[%d{HH:mm:ss.SSS}] [%-5p] [%5X{pid}:%tid] %c - %msg"/>

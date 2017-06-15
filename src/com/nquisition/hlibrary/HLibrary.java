@@ -246,10 +246,10 @@ public class HLibrary extends Application
             System.out.println("Done!");*/
             //db.dropOrientationTags();
             //db.checkVerticality(0.8, 1.2);
-            //db.addDirectory("D:\\temp1\\Новая папка", 2);
+            //db.addDirectory("D:\\temp1\\ﾐ斷ｾﾐｲﾐｰﾑ� ﾐｿﾐｰﾐｿﾐｺﾐｰ", 2);
             //db.purgeDatabase();
             //System.out.println(db.getNumImages());
-            //db.addDirectory("D:\\temp1\\Новая папка", 1);
+            //db.addDirectory("D:\\temp1\\ﾐ斷ｾﾐｲﾐｰﾑ� ﾐｿﾐｰﾐｿﾐｺﾐｰ", 1);
             //db.checkVerticality(0.8, 1.2);
             //System.out.println(db.getNumImages());
             //db.rotateVertical(0.8, 20);
@@ -312,8 +312,8 @@ public class HLibrary extends Application
             //manager = new DatabaseViewer(db);
             //manager.show();
 
-            //Utils.moveFiles("D:\\temp1\\Новая папка", "D:\\temp1\\Новая папка\\Discarded", "Копия");
-            /*Path directory = Paths.get("D:\\temp1\\Новая папка\\Discarded");
+            //Utils.moveFiles("D:\\temp1\\ﾐ斷ｾﾐｲﾐｰﾑ� ﾐｿﾐｰﾐｿﾐｺﾐｰ", "D:\\temp1\\ﾐ斷ｾﾐｲﾐｰﾑ� ﾐｿﾐｰﾐｿﾐｺﾐｰ\\Discarded", "ﾐ墟ｾﾐｿﾐｸﾑ�");
+            /*Path directory = Paths.get("D:\\temp1\\ﾐ斷ｾﾐｲﾐｰﾑ� ﾐｿﾐｰﾐｿﾐｺﾐｰ\\Discarded");
             Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                    Files.delete(file);
@@ -358,8 +358,13 @@ public class HLibrary extends Application
         try
         {
             System.in.read();
-        } 
+        }
         catch(Exception e)
         {}  
+    }
+    
+    public static void main(String[] args)
+    {
+    	launch(args);
     }
 }
