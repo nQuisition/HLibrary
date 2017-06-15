@@ -52,13 +52,19 @@ public class MultiColoredText extends TextFlow
 			if(text[i] == null || text[i].equals(""))
 			{
 				if(pieces[i].isManaged())
+				{
 					pieces[i].setManaged(false);
+					pieces[i].setVisible(false);
+				}
 			}
 			else
 			{
 				pieces[i].setText(text[i]);
 				if(!pieces[i].isManaged())
+				{
 					pieces[i].setManaged(true);
+					pieces[i].setVisible(true);
+				}
 			}
 		}
 	}

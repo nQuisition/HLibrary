@@ -1066,6 +1066,8 @@ public class GalleryViewer extends HConsoleStage
     	
         private final StackPane infoPane;
         
+        //FIXME When tags do not fit to page, the info moves off-screen to the left
+        //for some reason
         private final Text tags;
         private final MultiColoredText info;
         private final TextArea commentArea;

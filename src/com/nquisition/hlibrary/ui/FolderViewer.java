@@ -19,6 +19,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.*;
 import javafx.event.*;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.beans.binding.*;
 
 import org.apache.commons.io.*;
@@ -39,8 +41,8 @@ public final class FolderViewer extends HConsoleStage
     private Database db;
     private String root;
     
-    private ListView<String> list1/*, list2*/;
-    private ObservableList<String> data1/*, data2*/;
+    private ListView<String> list1;
+    private ObservableList<String> data1;
     private TextField tagInput;
     
     private boolean groupLists = true;
@@ -58,46 +60,67 @@ public final class FolderViewer extends HConsoleStage
         root = folder;
         
         data1 = FXCollections.observableArrayList();
-        //data2 = FXCollections.observableArrayList();
         
+        /*----------------------------------------------------------
+         * Viewing/adding folders
+         *----------------------------------------------------------*/
         list1 = new ListView<>(data1);
-        //list2 = new ListView<String>(data2);
         list1.setPrefSize(300, 400);
-        //list2.setPrefSize(300, 400);
         list1.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        //list2.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         list1.setEditable(false);
-        //list2.setEditable(false);
-        //list2.setItems(list1.getSelectionModel().getSelectedItems());
-        Button button0 = new Button("Thumbs");
-        button0.setOnAction((ActionEvent e) -> {
+        
+        Button thumbsButton = new Button("Thumbs");
+        thumbsButton.setOnAction((ActionEvent e) -> {
             viewAddThumbs();
         });
-        Button button1 = new Button("Go");
-        button1.setOnAction((ActionEvent e) -> {
+        Button viewAddButton = new Button("Go");
+        viewAddButton.setOnAction((ActionEvent e) -> {
             viewAddFolders();
         });
-        //tagInput = new TextField("fav :DarkArtsKai");
+        
+        thumbsButton.setMaxWidth(Double.MAX_VALUE);
+        viewAddButton.setMaxWidth(Double.MAX_VALUE);
+        VBox viewAddButtonsBox = new VBox();
+        viewAddButtonsBox.setSpacing(5);
+        viewAddButtonsBox.setPadding(new Insets(40, 10, 0, 10));
+        viewAddButtonsBox.getChildren().addAll(thumbsButton, viewAddButton);
+        HBox viewAddBox = new HBox();
+        viewAddBox.setPadding(new Insets(10, 10, 10, 10));
+        viewAddBox.getChildren().addAll(list1, viewAddButtonsBox);
+        
+        /*----------------------------------------------------------
+         * Viewing gallery (tagged, linked, local DBs)
+         *----------------------------------------------------------*/
         tagInput = new TextField();
-        Button button2 = new Button("Go");
-        button2.setOnAction((ActionEvent e) -> {
+        Button viewTaggedButton = new Button("Go");
+        viewTaggedButton.setOnAction((ActionEvent e) -> {
             viewTaggedGallery();
         });
         
-        Button button3 = new Button("Linked");
-        button3.setOnAction((ActionEvent e) -> {
+        Button viewLinkedButton = new Button("Linked");
+        viewLinkedButton.setOnAction((ActionEvent e) -> {
             showLinked();
         });
         
-        Button button4 = new Button("Local DBs");
-        button4.setOnAction((ActionEvent e) -> {
+        Button viewLocalButton = new Button("Local DBs");
+        viewLocalButton.setOnAction((ActionEvent e) -> {
             LocalDatabaseViewer v = new LocalDatabaseViewer(root);
             v.show();
         });
-        HBox box1 = new HBox(list1, new VBox(button0, button1)/*, list2*/);
-        HBox box2 = new HBox(tagInput, button2, button3, button4);
         
-        VBox wrapper = new VBox(box1, box2);
+        viewTaggedButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        viewLinkedButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        viewLocalButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        TilePane viewGalleryButtonsBox = new TilePane(Orientation.HORIZONTAL);
+        viewGalleryButtonsBox.setPadding(new Insets(10, 0, 0, 0));
+        viewGalleryButtonsBox.setHgap(10.0);
+        viewGalleryButtonsBox.setVgap(8.0);
+        viewGalleryButtonsBox.getChildren().addAll(viewTaggedButton, viewLinkedButton, viewLocalButton);
+        VBox viewGalleryBox = new VBox();
+        viewGalleryBox.setPadding(new Insets(20, 10, 10, 10));
+        viewGalleryBox.getChildren().addAll(tagInput, viewGalleryButtonsBox);
+        
+        VBox wrapper = new VBox(viewAddBox, viewGalleryBox);
         
         ArrayList<String> folders = this.getFolders();
         for(int i = 0; i < folders.size(); i++)
@@ -146,7 +169,6 @@ public final class FolderViewer extends HConsoleStage
     public void viewAddFolders()
     {
         ArrayList<String> folders = new ArrayList<>();
-        //for(String str : list2.getItems())
         for(String str : list1.getSelectionModel().getSelectedItems())
         {
             folders.add(str);
@@ -205,7 +227,6 @@ public final class FolderViewer extends HConsoleStage
     public void viewAddThumbs()
     {
         ArrayList<String> folders = new ArrayList<String>();
-        //for(String str : list2.getItems())
         for(String str : list1.getSelectionModel().getSelectedItems())
         {
             folders.add(str);
