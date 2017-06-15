@@ -6,6 +6,9 @@
 package com.nquisition.hlibrary.model;
 
 import java.util.*;
+
+import org.apache.logging.log4j.core.util.NameUtil;
+
 import java.io.*;
 import javafx.scene.image.*;
 import java.text.*;
@@ -372,6 +375,35 @@ public class Gallery
         GImage current = images.get(curimg);
         return (current.getParent()==null)?current.getName():
                 current.getParent().getPath()+current.getName();
+    }
+    
+    public String getCurrentName()
+    {
+    	if(curimg < 0 || images.size() <= 0)
+            return "";
+    	return images.get(curimg).getName();
+    }
+    
+    /**
+     * Get current image's path in 2/3 pieces - root folder + {subfolders} + image name
+     * @return
+     */
+    public String[] getCurrentNameFullPiecewise()
+    {
+    	if(curimg < 0 || images.size() <= 0)
+            return new String[]{"", ""};
+    	GImage current = images.get(curimg);
+    	GFolder topParent = current.getTopLevelParent();
+    	int num = current.isOnTopLevel() ? 2 : 3;
+    	String[] res = new String[num];
+    	res[num-1] = current.getName();
+    	res[0] = topParent == null ? "" : topParent.getPath();
+    	if(num > 2)
+    	{
+    		//parent is not null in this case
+    		res[1] = current.getParent().getPath().substring(topParent.getPath().length());
+    	}
+    	return res;
     }
     
     public void cacheRemoveFurthest()

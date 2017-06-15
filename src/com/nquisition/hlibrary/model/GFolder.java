@@ -86,6 +86,13 @@ public class GFolder extends GEntry
         return null;
     }
     
+    public GFolder getTopLevelParent()
+    {
+    	if(parent != null)
+    		return parent.getTopLevelParent();
+    	return this;
+    }
+    
     public String getString()
     {
         String separator = Database.DATA_SEPARATOR;

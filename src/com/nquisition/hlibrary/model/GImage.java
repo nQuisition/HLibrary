@@ -120,6 +120,18 @@ public class GImage extends GEntry
         return parent;
     }
     
+    public GFolder getTopLevelParent()
+    {
+    	return parent==null?null:parent.getTopLevelParent();
+    }
+    
+    public boolean isOnTopLevel()
+    {
+    	if(parent == this.getTopLevelParent())
+    		return true;
+    	return false;
+    }
+    
     public void clearParent()
     {
         parent = null;

@@ -6,6 +6,8 @@
 package com.nquisition.hlibrary.ui;
 
 import com.nquisition.hlibrary.HLibrary;
+import com.nquisition.hlibrary.fxutil.ColorMap;
+import com.nquisition.hlibrary.fxutil.MultiColoredText;
 import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.GImage;
@@ -111,10 +113,10 @@ public class GalleryViewer extends HConsoleStage
         linkIndicator.setStrokeWidth(15);
         linkIndicator.setVisible(false);
         
-        linkNum = TextBuilder.create().text("")
-                .font(Font.font("Arial", FontWeight.BOLD, 38))
-                .fill(Color.YELLOW)
-                .build();
+        linkNum = new Text("");
+        linkNum.setFont(Font.font("Arial", FontWeight.BOLD, 38));
+        linkNum.setFill(Color.YELLOW);
+        
         linkNumBox = new VBox();
         linkNumBox.getChildren().addAll(linkNum);
         linkNumBox.setMaxSize(50, 50);
@@ -303,7 +305,6 @@ public class GalleryViewer extends HConsoleStage
         });
         
         scene.addEventHandler(ScrollEvent.SCROLL, (sevent) -> {
-            double origzoom = curzoom;
             if(sevent.getTextDeltaY() < 0)
             {
                 curzoom -= zoomstep;
@@ -563,7 +564,6 @@ public class GalleryViewer extends HConsoleStage
     {
         gal = g;
         imv.setImage(gal.getNext(false));
-        infoOverlay.setInfoText(gal.getCurrentNameFull());
         lastload = System.currentTimeMillis();
         this.resetImage(true, false);
     }
@@ -572,7 +572,6 @@ public class GalleryViewer extends HConsoleStage
     {
         gal = g;
         imv.setImage(gal.getByName(fname));
-        infoOverlay.setInfoText(gal.getCurrentNameFull());
         lastload = System.currentTimeMillis();
         this.resetImage(true, false);
     }
@@ -1055,27 +1054,36 @@ public class GalleryViewer extends HConsoleStage
     
     private class InfoOverlay
     {
+    	//Info format is :
+    	//	0			1		2			3		(4		5	6)
+    	//num/total rootPath subfolders imageName added viewed mod
+    	private final ColorMap infoColorMap = new ColorMap(Color.BLUE);
+    	{
+    		infoColorMap.setColor(1, Color.LIGHTBLUE);
+    		infoColorMap.setColor(3, Color.YELLOW);
+    	}
+    	private final Font defaultFont = Font.font("Arial", FontWeight.BOLD, 18);
+    	
         private final StackPane infoPane;
         
-        private final Text info, tags;
+        private final Text tags;
+        private final MultiColoredText info;
         private final TextArea commentArea;
         
         public InfoOverlay()
         {
             infoPane = new StackPane();
             
-            info = TextBuilder.create().text("")
-                    .font(Font.font("Arial", FontWeight.BOLD, 18))
-                    .fill(Color.BLUE)
-                    .build();
+            info = new MultiColoredText(5, defaultFont, infoColorMap);
+            
             VBox infoWrapper = new VBox();
             infoWrapper.getChildren().addAll(info);
             infoWrapper.setAlignment(Pos.TOP_LEFT);
         
-            tags = TextBuilder.create().text("")
-                    .font(Font.font("Arial", FontWeight.BOLD, 18))
-                    .fill(Color.BLUE)
-                    .build();
+            tags = new Text("");
+            tags.setFont(defaultFont);
+            tags.setFill(Color.BLUE);
+            
             VBox tagsWrapper = new VBox();
             tagsWrapper.getChildren().addAll(tags);
             tagsWrapper.setAlignment(Pos.BOTTOM_LEFT);
@@ -1137,15 +1145,18 @@ public class GalleryViewer extends HConsoleStage
             resetImage(false, true);
         }
         
-        public void setInfoText(String text)
-        {
-            info.setText(text);
-        }
-        
         public void reset()
         {
-            info.setText(gal.getCurPos()+1 + "/" + gal.getSize() + " " + gal.getCurrentNameFull() +
-                    "   Added : " + gal.getAdded() + "   Viewed : " + gal.getViewed() + "   Mod : " + gal.getLastmod());
+        	String[] curNamePieces = gal.getCurrentNameFullPiecewise();
+        	String[] infoText = new String[5];
+        	infoText[0] = gal.getCurPos()+1 + "/" + gal.getSize() + " ";
+        	infoText[1] = curNamePieces[0];
+        	infoText[2] = curNamePieces.length < 3 ? "" : curNamePieces[1];
+        	infoText[3] = curNamePieces[curNamePieces.length-1];
+        	infoText[4] = 
+        			"   Added : " + gal.getAdded() + "   Viewed : " + gal.getViewed() + "   Mod : " + gal.getLastmod();
+
+            info.setText(infoText);
             tags.setText(gal.getTagString());
             commentArea.setText(gal.getCurrentComment());
         }
