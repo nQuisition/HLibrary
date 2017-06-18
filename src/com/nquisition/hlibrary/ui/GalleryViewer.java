@@ -9,8 +9,10 @@ import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.fxutil.ColorMap;
 import com.nquisition.hlibrary.fxutil.MultiColoredText;
 import com.nquisition.hlibrary.model.Gallery;
+import com.sun.media.jfxmediaimpl.NativeMediaPlayer.MediaErrorEvent;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.GImage;
+
 import java.io.*;
 import java.util.*;
 import javafx.geometry.*;
@@ -24,6 +26,9 @@ import javafx.scene.shape.*;
 import javafx.scene.text.*;
 import javafx.stage.*;
 import javafx.animation.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +52,7 @@ public class GalleryViewer extends HConsoleStage
     
     private TaggingOverlay taggingOverlay;
     private InfoOverlay infoOverlay;
+    private SideMenu sideMenu;
     
     private VBox linkNumBox;
     private Rectangle moveIndicator, linkIndicator, folderChangeIndicator;
@@ -67,7 +73,8 @@ public class GalleryViewer extends HConsoleStage
     private GImage selected = null;
     private GImage previmg = null, curimg = null;
     private ArrayList<GImage> linkChain = null;
-    private boolean tagging = false;
+    
+    private BooleanProperty tagging = new SimpleBooleanProperty(false);
     private boolean forceRotate = false;
     
     private Database db;
@@ -120,19 +127,26 @@ public class GalleryViewer extends HConsoleStage
         linkNumBox = new VBox();
         linkNumBox.getChildren().addAll(linkNum);
         linkNumBox.setMaxSize(50, 50);
-        linkNumBox.setAlignment(Pos.TOP_RIGHT);
+        StackPane.setAlignment(linkNumBox, Pos.TOP_RIGHT);
         linkNumBox.setStyle("-fx-background-color: #FF0000");
         linkNumBox.setVisible(false);
         
         infoOverlay = new InfoOverlay();
+        infoOverlay.setCommentVisible(false);
+        infoOverlay.setInfoVisible(true);
+        infoOverlay.setTagsVisible(true);
         taggingOverlay = new TaggingOverlay();
+        taggingOverlay.setVisible(false);
+        sideMenu = new SideMenu();
+        sideMenu.setVisible(false);
         
         //TODO never added to the scene
         consoleTextArea = new HConsoleTextArea(this);
         consoleTextArea.setVisible(false);
         HLibrary.registerListenerWithConsole(consoleTextArea);
         
-        root.getChildren().addAll(imv, moveIndicator, linkIndicator, folderChangeIndicator, taggingOverlay.getPane(), infoOverlay.getPane(), linkNumBox);
+        root.getChildren().addAll(imv, moveIndicator, linkIndicator, folderChangeIndicator, 
+        		taggingOverlay.getPane(), infoOverlay.getPane(), linkNumBox, sideMenu.getPane());
 
         this.initEventHandlers();
         
@@ -146,6 +160,11 @@ public class GalleryViewer extends HConsoleStage
     {
         taggingOverlay.initEventHandlers();
         infoOverlay.initEventHandlers();
+        sideMenu.initEventHandlers();
+        tagging.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) ->
+        {
+        	setTagging(newValue);
+        });
         
         scene.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
             if(null!=key.getCode()) switch (key.getCode()) {
@@ -161,7 +180,7 @@ public class GalleryViewer extends HConsoleStage
                 case E:
                     if(key.isControlDown())
                     {
-                        setTagging(true);
+                        tagging.set(true);
                         key.consume();
                     }
                     break;
@@ -348,6 +367,19 @@ public class GalleryViewer extends HConsoleStage
             
             dragStartX = posX;
             dragStartY = posY;
+        });
+        
+        scene.setOnMouseMoved((MouseEvent t) -> {
+        	
+        	//FIXME is there a more efficient way instead of calling this every time
+        	//the mouse is moved?
+            int x = (int)t.getSceneX();
+            int y = (int)t.getSceneY();
+            
+            if(x > width - 100)
+            	sideMenu.setVisible(true);
+            else
+            	sideMenu.setVisible(false);
         });
     }
     
@@ -749,7 +781,7 @@ public class GalleryViewer extends HConsoleStage
     
     public void resetImage(boolean newView, boolean newMod)
     {
-        if((tagging && gal.getCurrentGImage().hasTag("vertical")) || forceRotate)
+        if((tagging.get() && gal.getCurrentGImage().hasTag("vertical")) || forceRotate)
         {
             imv.setRotate(90);
             imv.setFitHeight(scene.getWidth());
@@ -799,44 +831,40 @@ public class GalleryViewer extends HConsoleStage
     {
         infoOverlay.setTagsVisible(!t);
         taggingOverlay.setVisible(t);
-        tagging = t;
         resetImage(false, false);
     }
     
     private class TaggingOverlay
     {
         private final StackPane taggingPane;
+        
         private final TextFlow abbrs1, abbrs2;
         private final TextField tagInput;
         
         public TaggingOverlay()
         {
-            taggingPane = new StackPane();
-        
             abbrs1 = new TextFlow();
             abbrs2 = new TextFlow();
             HBox abbrsWrapper = new HBox();
             abbrsWrapper.getChildren().addAll(abbrs1, abbrs2);
+            abbrsWrapper.setMaxHeight(height);
+            abbrsWrapper.setMaxWidth(400);
+            abbrsWrapper.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.7), CornerRadii.EMPTY, Insets.EMPTY)));
             abbrsWrapper.setAlignment(Pos.CENTER_RIGHT);
+            StackPane.setAlignment(abbrsWrapper, Pos.CENTER_RIGHT);
+            //FIXME Redo the whole abbrs thing
+            abbrsWrapper.visibleProperty().bind(abbrs1.visibleProperty());
             abbrs1.setVisible(true);
             abbrs2.setVisible(true);
 
-            Rectangle abbrsbg = new Rectangle(0, 0, 400, height);
-            abbrsbg.setFill(new Color(1.0, 1.0, 1.0, 0.7));
-            abbrsbg.setVisible(true);
-            HBox abbrsbgWrapper = new HBox();
-            abbrsbgWrapper.getChildren().addAll(abbrsbg);
-            abbrsbgWrapper.setAlignment(Pos.CENTER_RIGHT);
-
+            //TODO tagInput is click-through - desirable?
             tagInput = new TextField();
             tagInput.setStyle("-fx-control-inner-background: #000000");
-            VBox tagInputWrapper = new VBox();
-            tagInputWrapper.getChildren().addAll(tagInput);
-            tagInputWrapper.setAlignment(Pos.BOTTOM_LEFT);
+            tagInput.setFocusTraversable(false);
+            StackPane.setAlignment(tagInput, Pos.BOTTOM_LEFT);
             tagInput.setVisible(true);
 
-            taggingPane.getChildren().addAll(abbrsbgWrapper, abbrsWrapper, tagInputWrapper);
-            taggingPane.setVisible(false);
+            taggingPane = new StackPane(abbrsWrapper, tagInput);
         }
         
         public final void initEventHandlers()
@@ -862,7 +890,7 @@ public class GalleryViewer extends HConsoleStage
                     case E:
                         if(key.isControlDown())
                         {
-                            setTagging(false);
+                        	tagging.set(false);
                             key.consume();
                         }
                         else
@@ -878,7 +906,7 @@ public class GalleryViewer extends HConsoleStage
                         key.consume();
                         break;*/
                     case ESCAPE:
-                        setTagging(false);
+                        tagging.set(false);
                         key.consume();
                         break;
                     case SPACE:
@@ -911,9 +939,12 @@ public class GalleryViewer extends HConsoleStage
                         break;
                 }
             });
+            
+            //TODO releasing mouse button outside of tagInput fires the event to underlying pane,
+            //thus going to prev/next image
         }
         
-        public StackPane getPane()
+        public Parent getPane()
         {
             return taggingPane;
         }
@@ -921,13 +952,15 @@ public class GalleryViewer extends HConsoleStage
         public void setVisible(boolean visible)
         {
             taggingPane.setVisible(visible);
+            if(visible)
+            	tagInput.requestFocus();
         }
         
         public void reset()
         {
             tagInput.setText(gal.getTagString());
             tagInput.positionCaret(tagInput.getText().length());
-            if(tagging)
+            if(tagging.get())
                 fillAbbrs();
         }
         
@@ -1072,13 +1105,14 @@ public class GalleryViewer extends HConsoleStage
         
         public InfoOverlay()
         {
-            infoPane = new StackPane();
-            
             info = new MultiColoredText(5, defaultFont, infoColorMap);
             
             VBox infoWrapper = new VBox();
+            infoWrapper.setPadding(new Insets(5,0,0,5));
             infoWrapper.getChildren().addAll(info);
             infoWrapper.setAlignment(Pos.TOP_LEFT);
+            StackPane.setAlignment(infoWrapper, Pos.TOP_LEFT);
+            infoWrapper.visibleProperty().bind(info.visibleProperty());
         
             tags = new Text("");
             tags.setFont(defaultFont);
@@ -1086,8 +1120,11 @@ public class GalleryViewer extends HConsoleStage
             tags.setWrappingWidth(width);
             
             VBox tagsWrapper = new VBox();
+            tagsWrapper.setPadding(new Insets(0,0,5,5));
             tagsWrapper.getChildren().addAll(tags);
             tagsWrapper.setAlignment(Pos.BOTTOM_LEFT);
+            StackPane.setAlignment(tagsWrapper, Pos.BOTTOM_LEFT);
+            tagsWrapper.visibleProperty().bind(tags.visibleProperty());
             tags.setVisible(true);
             info.setVisible(true);
             
@@ -1098,11 +1135,18 @@ public class GalleryViewer extends HConsoleStage
             commentArea.setPrefWidth(300);
             commentArea.setMaxWidth(300);
             VBox commentAreaWrapper = new VBox();
+            //FIXME redo the whole commentArea thing
+            commentAreaWrapper.visibleProperty().bind(commentArea.visibleProperty());
             commentAreaWrapper.getChildren().addAll(commentArea);
             commentAreaWrapper.setAlignment(Pos.CENTER_LEFT);
+            StackPane.setAlignment(commentAreaWrapper, Pos.CENTER_LEFT);
             commentArea.setVisible(false);
             
-            infoPane.getChildren().addAll(infoWrapper, tagsWrapper, commentAreaWrapper);
+            infoPane = new StackPane(infoWrapper, tagsWrapper, commentAreaWrapper);
+            
+            //TODO performance?
+            infoPane.setPickOnBounds(false);
+            infoWrapper.setPickOnBounds(false);
         }
         
         public final void initEventHandlers()
@@ -1129,7 +1173,7 @@ public class GalleryViewer extends HConsoleStage
             });
         }
         
-        public StackPane getPane()
+        public Parent getPane()
         {
             return infoPane;
         }
@@ -1196,5 +1240,56 @@ public class GalleryViewer extends HConsoleStage
         {
             return commentArea.isVisible();
         }
+    }
+    
+    private class SideMenu
+    {
+    	private StackPane menuPane;
+    	
+    	private VBox rightMenu;
+    	
+    	public SideMenu()
+    	{
+    		CheckBox cbTagging = new CheckBox("Tagging") { public void requestFocus() {} };
+    		cbTagging.setSelected(tagging.get());
+    		cbTagging.selectedProperty().bindBidirectional(tagging);
+    		
+    		menuPane = new StackPane();
+    		
+    		rightMenu = new VBox();
+    		rightMenu.setMaxSize(300, 300);
+    		rightMenu.setBackground(new Background(new BackgroundFill(new Color(0.92, 0.92, 0.92, 1.0), CornerRadii.EMPTY, Insets.EMPTY)));
+    		rightMenu.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, 
+    				CornerRadii.EMPTY, BorderWidths.DEFAULT, new Insets(5,5,5,5))));
+    		rightMenu.setPadding(new Insets(10,10,10,10));
+    		rightMenu.getChildren().addAll(new Label("General"), cbTagging);
+    		
+    		StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+    		menuPane.getChildren().addAll(rightMenu);
+    		menuPane.setPickOnBounds(false);
+    	}
+    	
+    	public void initEventHandlers()
+    	{
+    		//Prevent clicked events going through to elements below
+    		rightMenu.setOnMouseClicked(mevent -> {
+    			mevent.consume();
+    		});
+    		
+    		//Prevent the menu from disappearing if it is still being moused over
+    		rightMenu.setOnMouseMoved(mevent -> {
+    			mevent.consume();
+    		});
+    	}
+    	
+    	public Parent getPane()
+    	{
+    		return menuPane;
+    	}
+    	
+    	public void setVisible(boolean visible)
+    	{
+    		menuPane.setVisible(visible);
+    	}
     }
 }
