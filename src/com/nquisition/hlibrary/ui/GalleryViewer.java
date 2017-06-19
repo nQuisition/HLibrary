@@ -5,9 +5,12 @@
  */
 package com.nquisition.hlibrary.ui;
 
+import com.nquisition.fxutil.ColorMap;
+import com.nquisition.fxutil.FXFactory;
+import com.nquisition.fxutil.MultiColoredText;
 import com.nquisition.hlibrary.HLibrary;
-import com.nquisition.hlibrary.fxutil.ColorMap;
-import com.nquisition.hlibrary.fxutil.MultiColoredText;
+import com.nquisition.hlibrary.fxutil.HFXFactory;
+import com.nquisition.hlibrary.fxutil.HStyleSheet;
 import com.nquisition.hlibrary.model.Gallery;
 import com.sun.media.jfxmediaimpl.NativeMediaPlayer.MediaErrorEvent;
 import com.nquisition.hlibrary.model.Database;
@@ -44,6 +47,9 @@ public class GalleryViewer extends HConsoleStage
     
     private final Logger logger;
     
+    //TODO move to UI control
+    private HStyleSheet styleSheet = new HStyleSheet();
+    
     private Gallery gal;
     private ImageView imv;
     private Text linkNum;
@@ -66,7 +72,6 @@ public class GalleryViewer extends HConsoleStage
     private int movestep = 50;
     private double trX = 0;
     private double trY = 0;
-    private boolean limitToFav = false;
     private boolean dragging = false;
     private double dragStartX = 0.0, dragStartY = 0.0;
     
@@ -75,7 +80,8 @@ public class GalleryViewer extends HConsoleStage
     private ArrayList<GImage> linkChain = null;
     
     private BooleanProperty tagging = new SimpleBooleanProperty(false);
-    private boolean forceRotate = false;
+    private BooleanProperty forceRotate = new SimpleBooleanProperty(false);
+    private BooleanProperty limitToFav = new SimpleBooleanProperty(false);
     
     private Database db;
     
@@ -128,7 +134,7 @@ public class GalleryViewer extends HConsoleStage
         linkNumBox.getChildren().addAll(linkNum);
         linkNumBox.setMaxSize(50, 50);
         StackPane.setAlignment(linkNumBox, Pos.TOP_RIGHT);
-        linkNumBox.setStyle("-fx-background-color: #FF0000");
+        linkNumBox.setBackground(new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)));
         linkNumBox.setVisible(false);
         
         infoOverlay = new InfoOverlay();
@@ -165,6 +171,10 @@ public class GalleryViewer extends HConsoleStage
         {
         	setTagging(newValue);
         });
+        forceRotate.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) ->
+        {
+        	resetImage(false, false);
+        });
         
         scene.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
             if(null!=key.getCode()) switch (key.getCode()) {
@@ -185,11 +195,10 @@ public class GalleryViewer extends HConsoleStage
                     }
                     break;
                 case F:
-                    limitToFav = !limitToFav;
+                    limitToFav.set(!limitToFav.get());
                     break;
                 case R:
-                    forceRotate = !forceRotate;
-                    this.resetImage(false, false);
+                    forceRotate.set(!forceRotate.get());
                     break;
                 case Q:
                     invertOrientationTag();
@@ -692,7 +701,7 @@ public class GalleryViewer extends HConsoleStage
         if(time < lastload + throttling)
             return;
         
-        Image im = gal.jumpFolder(forward, limitToFav);
+        Image im = gal.jumpFolder(forward, limitToFav.get());
         imv.setImage(im);
         
         previmg = curimg;
@@ -724,7 +733,7 @@ public class GalleryViewer extends HConsoleStage
         if(time < lastload + throttling)
             return;
         
-        Image im = gal.getNext(limitToFav);
+        Image im = gal.getNext(limitToFav.get());
         imv.setImage(im);
         
         previmg = curimg;
@@ -743,7 +752,7 @@ public class GalleryViewer extends HConsoleStage
         if(time < lastload + throttling)
             return;
         
-        Image im = gal.getPrev(limitToFav);
+        Image im = gal.getPrev(limitToFav.get());
         imv.setImage(im);
         
         previmg = curimg;
@@ -781,7 +790,7 @@ public class GalleryViewer extends HConsoleStage
     
     public void resetImage(boolean newView, boolean newMod)
     {
-        if((tagging.get() && gal.getCurrentGImage().hasTag("vertical")) || forceRotate)
+        if((tagging.get() && gal.getCurrentGImage().hasTag("vertical")) || forceRotate.get())
         {
             imv.setRotate(90);
             imv.setFitHeight(scene.getWidth());
@@ -827,10 +836,10 @@ public class GalleryViewer extends HConsoleStage
         linkNumBox.setVisible(true);
     }
     
-    public void setTagging(boolean t)
+    public void setTagging(boolean value)
     {
-        infoOverlay.setTagsVisible(!t);
-        taggingOverlay.setVisible(t);
+        infoOverlay.setTagsVisible(!value);
+        taggingOverlay.setVisible(value);
         resetImage(false, false);
     }
     
@@ -849,7 +858,7 @@ public class GalleryViewer extends HConsoleStage
             abbrsWrapper.getChildren().addAll(abbrs1, abbrs2);
             abbrsWrapper.setMaxHeight(height);
             abbrsWrapper.setMaxWidth(400);
-            abbrsWrapper.setBackground(new Background(new BackgroundFill(new Color(1.0, 1.0, 1.0, 0.7), CornerRadii.EMPTY, Insets.EMPTY)));
+            abbrsWrapper.setBackground(FXFactory.createSimpleBackground(new Color(1.0, 1.0, 1.0, 0.7)));
             abbrsWrapper.setAlignment(Pos.CENTER_RIGHT);
             StackPane.setAlignment(abbrsWrapper, Pos.CENTER_RIGHT);
             //FIXME Redo the whole abbrs thing
@@ -857,7 +866,6 @@ public class GalleryViewer extends HConsoleStage
             abbrs1.setVisible(true);
             abbrs2.setVisible(true);
 
-            //TODO tagInput is click-through - desirable?
             tagInput = new TextField();
             tagInput.setStyle("-fx-control-inner-background: #000000");
             tagInput.setFocusTraversable(false);
@@ -1095,7 +1103,6 @@ public class GalleryViewer extends HConsoleStage
     		infoColorMap.setColor(1, Color.LIGHTBLUE);
     		infoColorMap.setColor(3, Color.YELLOW);
     	}
-    	private final Font defaultFont = Font.font("Arial", FontWeight.BOLD, 18);
     	
         private final StackPane infoPane;
         
@@ -1105,7 +1112,7 @@ public class GalleryViewer extends HConsoleStage
         
         public InfoOverlay()
         {
-            info = new MultiColoredText(5, defaultFont, infoColorMap);
+            info = new MultiColoredText(5, styleSheet.getDefaultInfoFont(), infoColorMap);
             
             VBox infoWrapper = new VBox();
             infoWrapper.setPadding(new Insets(5,0,0,5));
@@ -1115,7 +1122,7 @@ public class GalleryViewer extends HConsoleStage
             infoWrapper.visibleProperty().bind(info.visibleProperty());
         
             tags = new Text("");
-            tags.setFont(defaultFont);
+            tags.setFont(styleSheet.getDefaultInfoFont());
             tags.setFill(Color.BLUE);
             tags.setWrappingWidth(width);
             
@@ -1253,25 +1260,43 @@ public class GalleryViewer extends HConsoleStage
     		CheckBox cbTagging = new CheckBox("Tagging") { public void requestFocus() {} };
     		cbTagging.setSelected(tagging.get());
     		cbTagging.selectedProperty().bindBidirectional(tagging);
+    		CheckBox cbLimitToFavs = new CheckBox("Limit to favs") { public void requestFocus() {} };
+    		cbLimitToFavs.setSelected(limitToFav.get());
+    		cbLimitToFavs.selectedProperty().bindBidirectional(limitToFav);
+    		CheckBox cbForceRotate = new CheckBox("Force rotate") { public void requestFocus() {} };
+    		cbForceRotate.setSelected(forceRotate.get());
+    		cbForceRotate.selectedProperty().bindBidirectional(forceRotate);
     		
     		menuPane = new StackPane();
     		
     		rightMenu = new VBox();
-    		rightMenu.setMaxSize(300, 300);
-    		rightMenu.setBackground(new Background(new BackgroundFill(new Color(0.92, 0.92, 0.92, 1.0), CornerRadii.EMPTY, Insets.EMPTY)));
-    		rightMenu.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, 
-    				CornerRadii.EMPTY, BorderWidths.DEFAULT, new Insets(5,5,5,5))));
-    		rightMenu.setPadding(new Insets(10,10,10,10));
-    		rightMenu.getChildren().addAll(new Label("General"), cbTagging);
+    		rightMenu.setBackground(styleSheet.getMenuBackground());
+    		rightMenu.setBorder(styleSheet.getMenuBorder());
     		
-    		StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
-    		menuPane.getChildren().addAll(rightMenu);
+    		Label modeGroupLabel = HFXFactory.createMenuLabel("General", styleSheet);
+    		VBox modeGroupContent = new VBox();
+    		modeGroupContent.setPadding(new Insets(10,10,10,10));
+    		modeGroupContent.setSpacing(2);
+    		modeGroupContent.getChildren().addAll(cbTagging, cbLimitToFavs, cbForceRotate);
+    		rightMenu.getChildren().addAll(modeGroupLabel, modeGroupContent);
+    		
+    		//TODO better way to stop the menu from taking the whole height?
+    		VBox rightMenuTopDummy = new VBox();
+    		rightMenuTopDummy.setPrefHeight(height);
+    		VBox rightMenuBottomDummy = new VBox();
+    		rightMenuBottomDummy.setPrefHeight(height);
+    		VBox rightMenuWrapper = new VBox();
+    		rightMenuWrapper.setMaxWidth(300);
+    		rightMenuWrapper.getChildren().addAll(rightMenuTopDummy, rightMenu, rightMenuBottomDummy);
+    		
+    		StackPane.setAlignment(rightMenuWrapper, Pos.CENTER_RIGHT);
+    		menuPane.getChildren().addAll(rightMenuWrapper);
     		menuPane.setPickOnBounds(false);
     	}
     	
     	public void initEventHandlers()
     	{
-    		//Prevent clicked events going through to elements below
+    		//Prevent clicked events from going through to elements below
     		rightMenu.setOnMouseClicked(mevent -> {
     			mevent.consume();
     		});
