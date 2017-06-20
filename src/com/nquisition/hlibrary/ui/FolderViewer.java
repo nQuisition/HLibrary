@@ -9,6 +9,7 @@ import com.nquisition.hlibrary.util.CreationTimeFileComparator;
 import com.nquisition.hlibrary.model.GImageList;
 import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.model.GFolder;
+import com.nquisition.hlibrary.fxutil.HFXFactory;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.GImage;
 import java.io.*;
@@ -92,25 +93,22 @@ public final class FolderViewer extends HConsoleStage
          * Viewing gallery (tagged, linked, local DBs)
          *----------------------------------------------------------*/
         tagInput = new TextField();
-        Button viewTaggedButton = new Button("Go");
+        Button viewTaggedButton = HFXFactory.createUnboundedButton("Go");
         viewTaggedButton.setOnAction((ActionEvent e) -> {
             viewTaggedGallery();
         });
         
-        Button viewLinkedButton = new Button("Linked");
+        Button viewLinkedButton = HFXFactory.createUnboundedButton("Linked");
         viewLinkedButton.setOnAction((ActionEvent e) -> {
             showLinked();
         });
         
-        Button viewLocalButton = new Button("Local DBs");
+        Button viewLocalButton = HFXFactory.createUnboundedButton("Local DBs");
         viewLocalButton.setOnAction((ActionEvent e) -> {
             LocalDatabaseViewer v = new LocalDatabaseViewer(root);
             v.show();
         });
         
-        viewTaggedButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        viewLinkedButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        viewLocalButton.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         TilePane viewGalleryButtonsBox = new TilePane(Orientation.HORIZONTAL);
         viewGalleryButtonsBox.setPadding(new Insets(10, 0, 0, 0));
         viewGalleryButtonsBox.setHgap(10.0);

@@ -500,7 +500,14 @@ public class Gallery
         this.addTagToCurrent("low", toggle);
     }
     
-    public void rankCurrentFolder(int r)
+    public int getCurrentRating()
+    {
+    	if(curimg < 0 || images.size() <= 0)
+            return -1;
+    	return images.get(curimg).getParent().getRating();
+    }
+    
+    public void rateCurrentFolder(int r)
     {
         if(curimg < 0 || images.size() <= 0)
             return;
@@ -514,6 +521,7 @@ public class Gallery
         images.get(curimg).getParent().addTag(String.valueOf(r), true);
     }
     
+    //TODO doesn't belong here?
     public void rotateImage(boolean left)
     {
         if(curimg < 0 || images.size() <= 0)

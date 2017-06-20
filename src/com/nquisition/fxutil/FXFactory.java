@@ -1,6 +1,8 @@
 package com.nquisition.fxutil;
 
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -52,9 +54,23 @@ public class FXFactory
 			res.setMaxWidth(width);
 		else
 			res.setMaxWidth(Double.MAX_VALUE);
-		res.setBackground(background);
+		if(background != null)
+			res.setBackground(background);
 		res.setPadding(padding);
 		
+		return res;
+	}
+	
+	public static CheckBox createUnfocusedCheckBox(String label)
+	{
+		CheckBox res = new CheckBox(label) { public void requestFocus() {} };
+		return res;
+	}
+	
+	public static Button createUnboundedButton(String label)
+	{
+		Button res = new Button(label);
+		res.setMaxWidth(Double.MAX_VALUE);
 		return res;
 	}
 }

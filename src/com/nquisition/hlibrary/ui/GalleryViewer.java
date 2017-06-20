@@ -8,11 +8,13 @@ package com.nquisition.hlibrary.ui;
 import com.nquisition.fxutil.ColorMap;
 import com.nquisition.fxutil.FXFactory;
 import com.nquisition.fxutil.MultiColoredText;
+import com.nquisition.fxutil.RatingBar;
 import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.fxutil.HFXFactory;
 import com.nquisition.hlibrary.fxutil.HStyleSheet;
 import com.nquisition.hlibrary.model.Gallery;
 import com.sun.media.jfxmediaimpl.NativeMediaPlayer.MediaErrorEvent;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.GImage;
 
@@ -30,8 +32,12 @@ import javafx.scene.text.*;
 import javafx.stage.*;
 import javafx.animation.*;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
 import javafx.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,10 +89,14 @@ public class GalleryViewer extends HConsoleStage
     private BooleanProperty forceRotate = new SimpleBooleanProperty(false);
     private BooleanProperty limitToFav = new SimpleBooleanProperty(false);
     
+    private IntegerProperty curRating = new SimpleIntegerProperty(0);
+    
     private Database db;
     
     private long throttling = 20;
     private long lastload = 0;
+    
+    private ChangeListener<Number> curRatingChanged;
     
     public GalleryViewer(Database d)
     {
@@ -167,6 +177,7 @@ public class GalleryViewer extends HConsoleStage
         taggingOverlay.initEventHandlers();
         infoOverlay.initEventHandlers();
         sideMenu.initEventHandlers();
+        
         tagging.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) ->
         {
         	setTagging(newValue);
@@ -175,6 +186,12 @@ public class GalleryViewer extends HConsoleStage
         {
         	resetImage(false, false);
         });
+        
+        curRatingChanged = (ObservableValue<? extends Number> observable, Number oldValue, Number newValue) ->
+        {
+        	gal.rateCurrentFolder(newValue.intValue());
+        };
+        curRating.addListener(curRatingChanged);
         
         scene.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
             if(null!=key.getCode()) switch (key.getCode()) {
@@ -266,22 +283,22 @@ public class GalleryViewer extends HConsoleStage
                     nextImage();
                     break;
                 case DIGIT0:
-                    rankCurrentFolder(0);
+                    curRating.set(0);
                     break;
                 case DIGIT1:
-                    rankCurrentFolder(1);
+                	curRating.set(1);
                     break;
                 case DIGIT2:
-                    rankCurrentFolder(2);
+                	curRating.set(2);
                     break;
                 case DIGIT3:
-                    rankCurrentFolder(3);
+                	curRating.set(3);
                     break;
                 case DIGIT4:
-                    rankCurrentFolder(4);
+                	curRating.set(4);
                     break;
                 case DIGIT5:
-                    rankCurrentFolder(5);
+                	curRating.set(5);
                     break;
                 case ESCAPE:
                     if(selected != null || linkChain != null)
@@ -570,10 +587,9 @@ public class GalleryViewer extends HConsoleStage
         resetImage(false, true);
     }
     
-    public void rankCurrentFolder(int r)
+    public int getCurrentRating()
     {
-        gal.rankCurrentFolder(r);
-        resetImage(false, false);
+    	return gal.getCurrentRating();
     }
     
     public void lowCurrent()
@@ -805,6 +821,12 @@ public class GalleryViewer extends HConsoleStage
         
         if(newMod)
             gal.currentImageModified();
+        
+        //TODO hacky, but have to do it so that we don't have to set  folder's 
+        //rating right after getting it
+        curRating.removeListener(curRatingChanged);
+        curRating.set(getCurrentRating());
+        curRating.addListener(curRatingChanged);
         
         curzoom = 1.0;
         trX = 0;
@@ -1213,6 +1235,16 @@ public class GalleryViewer extends HConsoleStage
             commentArea.setText(gal.getCurrentComment());
         }
         
+        public BooleanProperty getInfoVisibleProperty()
+        {
+        	return info.visibleProperty();
+        }
+        
+        public BooleanProperty getTagsVisibleProperty()
+        {
+        	return tags.visibleProperty();
+        }
+        
         public void setTagsVisible(boolean visible)
         {
             tags.setVisible(visible);
@@ -1257,29 +1289,62 @@ public class GalleryViewer extends HConsoleStage
     	
     	public SideMenu()
     	{
-    		CheckBox cbTagging = new CheckBox("Tagging") { public void requestFocus() {} };
-    		cbTagging.setSelected(tagging.get());
-    		cbTagging.selectedProperty().bindBidirectional(tagging);
-    		CheckBox cbLimitToFavs = new CheckBox("Limit to favs") { public void requestFocus() {} };
-    		cbLimitToFavs.setSelected(limitToFav.get());
-    		cbLimitToFavs.selectedProperty().bindBidirectional(limitToFav);
-    		CheckBox cbForceRotate = new CheckBox("Force rotate") { public void requestFocus() {} };
-    		cbForceRotate.setSelected(forceRotate.get());
-    		cbForceRotate.selectedProperty().bindBidirectional(forceRotate);
-    		
-    		menuPane = new StackPane();
+    		//*-------------------------------------------------
+    		//* RIGHT MENU
+    		//*-------------------------------------------------
     		
     		rightMenu = new VBox();
     		rightMenu.setBackground(styleSheet.getMenuBackground());
     		rightMenu.setBorder(styleSheet.getMenuBorder());
     		
-    		Label modeGroupLabel = HFXFactory.createMenuLabel("General", styleSheet);
-    		VBox modeGroupContent = new VBox();
-    		modeGroupContent.setPadding(new Insets(10,10,10,10));
-    		modeGroupContent.setSpacing(2);
-    		modeGroupContent.getChildren().addAll(cbTagging, cbLimitToFavs, cbForceRotate);
-    		rightMenu.getChildren().addAll(modeGroupLabel, modeGroupContent);
+    		//* GENERAL GROUP
+    		Label generalGroupLabel = HFXFactory.createSectionTitleLabel("General", styleSheet);
     		
+    		VBox generalGroupContent = new VBox();
+    		generalGroupContent.setPadding(new Insets(10,10,10,10));
+    		generalGroupContent.setSpacing(2);
+    		CheckBox cbDisplayInfo = HFXFactory.createBoundCheckBox("Display info", infoOverlay.getInfoVisibleProperty());
+    		//TODO when exiting tagging mode, "tags" visibility gets set to true
+    		//regardless of what it was before entering tagging mode
+    		CheckBox cbDisplayTags = HFXFactory.createBoundCheckBox("Display tags", infoOverlay.getTagsVisibleProperty());
+    		CheckBox cbTagging = HFXFactory.createBoundCheckBox("Tagging mode", tagging);
+    		//Disable the "Display tags" checkbox while tagging
+    		cbDisplayTags.disableProperty().bind(tagging);
+    		CheckBox cbLimitToFavs = HFXFactory.createBoundCheckBox("Limit to favs", limitToFav);
+    		CheckBox cbForceRotate = HFXFactory.createBoundCheckBox("Force rotate", forceRotate);
+    		generalGroupContent.getChildren().addAll(cbDisplayInfo, cbDisplayTags, cbTagging, cbLimitToFavs, cbForceRotate);
+    		
+    		//* IMAGE ACTIONS GROUP
+    		Label imageGroupLabel = HFXFactory.createSectionTitleLabel("Image Actions", styleSheet);
+    		
+    		VBox imageGroupContent = new VBox();
+    		imageGroupContent.setPadding(new Insets(10,10,10,10));
+    		imageGroupContent.setSpacing(2);
+    		Label rotateLabel = HFXFactory.createMenuLabel("Rotate image", styleSheet);
+    		HBox rotateButtonsWrapper = new HBox();
+    		rotateButtonsWrapper.setSpacing(5);
+    		rotateButtonsWrapper.setAlignment(Pos.BASELINE_CENTER);
+    		Button rotateRight = HFXFactory.createUnboundedButton("Right");
+    		rotateRight.setOnAction(event -> { rotateImage(false); });
+    		Button rotateLeft = HFXFactory.createUnboundedButton("Left");
+    		rotateLeft.setOnAction(event -> { rotateImage(true); });
+    		Button invertOrientation = HFXFactory.createUnboundedButton("Invert orientation");
+    		invertOrientation.setOnAction(event -> { invertOrientationTag(); });
+    		rotateButtonsWrapper.getChildren().addAll(rotateLeft, rotateRight, invertOrientation);
+    		imageGroupContent.getChildren().addAll(rotateLabel, rotateButtonsWrapper);
+    		
+    		//* FOLDER RATING
+    		Label ratingGroupLabel = HFXFactory.createSectionTitleLabel("Folder Rating", styleSheet);
+    		VBox ratingGroupContent = new VBox();
+    		ratingGroupContent.setPadding(new Insets(10,10,10,10));
+    		ratingGroupContent.setSpacing(2);
+    		RatingBar ratingBar = new RatingBar(5, 32, styleSheet.getStarFull(),
+    				styleSheet.getStarEmpty(), styleSheet.getStarNoRating());
+    		ratingBar.bindCurRating(curRating);
+    		ratingGroupContent.getChildren().addAll(ratingBar.getContainer());
+    		
+    		rightMenu.getChildren().addAll(generalGroupLabel, generalGroupContent,
+    				imageGroupLabel, imageGroupContent, ratingGroupLabel, ratingGroupContent);
     		//TODO better way to stop the menu from taking the whole height?
     		VBox rightMenuTopDummy = new VBox();
     		rightMenuTopDummy.setPrefHeight(height);
@@ -1289,6 +1354,11 @@ public class GalleryViewer extends HConsoleStage
     		rightMenuWrapper.setMaxWidth(300);
     		rightMenuWrapper.getChildren().addAll(rightMenuTopDummy, rightMenu, rightMenuBottomDummy);
     		
+    		//*-------------------------------------------------
+    		//* PARENT PANE
+    		//*-------------------------------------------------
+    		
+    		menuPane = new StackPane();
     		StackPane.setAlignment(rightMenuWrapper, Pos.CENTER_RIGHT);
     		menuPane.getChildren().addAll(rightMenuWrapper);
     		menuPane.setPickOnBounds(false);

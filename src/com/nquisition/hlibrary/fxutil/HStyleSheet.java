@@ -2,6 +2,7 @@ package com.nquisition.hlibrary.fxutil;
 
 import com.nquisition.fxutil.FXFactory;
 
+import javafx.scene.image.Image;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Border;
 import javafx.scene.paint.Color;
@@ -22,7 +23,12 @@ public class HStyleSheet
 	private Background sectionTitleBackground = FXFactory.createSimpleBackground(sectionTitleGradient);
 
 	private Font defaultInfoFont = Font.font("Arial", FontWeight.BOLD, 18);
-	private Font sectionTitleFont = Font.font("Arial", FontWeight.BOLD, Font.getDefault().getSize());
+	private Font defaultMenuFont = Font.getDefault();
+	private Font sectionTitleFont = Font.font(Font.getDefault().getFamily(), FontWeight.BOLD, Font.getDefault().getSize());
+	
+	private Image starFull = new Image("starfull.png");
+	private Image starEmpty = new Image("starempty.png");
+	private Image starNoRating = new Image("stardisabled.png");
 	
 	public Background getMenuBackground()
 	{
@@ -43,9 +49,29 @@ public class HStyleSheet
 	{
 		return defaultInfoFont;
 	}
+	
+	public Font getDefaultMenuFont()
+	{
+		return defaultMenuFont;
+	}
 
 	public Font getSectionTitleFont()
 	{
 		return sectionTitleFont;
+	}
+
+	public Image getStarFull()
+	{
+		return starFull;
+	}
+
+	public Image getStarEmpty()
+	{
+		return starEmpty;
+	}
+	
+	public Image getStarNoRating()
+	{
+		return starNoRating;
 	}
 }

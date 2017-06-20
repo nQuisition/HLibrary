@@ -51,22 +51,22 @@ public class GFolder extends GEntry
         this.resetTags();
     }
     
-    public String getRating()
+    public int getRating()
     {
         //TODO ............
         if(this.hasTag("0"))
-            return "0";
+            return 0;
         else if(this.hasTag("1"))
-            return "1";
+            return 1;
         else if(this.hasTag("2"))
-            return "2";
+            return 2;
         else if(this.hasTag("3"))
-            return "3";
+            return 3;
         else if(this.hasTag("4"))
-            return "4";
+            return 4;
         else if(this.hasTag("5"))
-            return "5";
-        return "?";
+            return 5;
+        return -1;
     }
             
     public GFolder getFolderByName(String path, boolean recursive)

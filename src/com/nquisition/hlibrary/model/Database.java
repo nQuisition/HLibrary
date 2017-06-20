@@ -440,11 +440,8 @@ public class Database
         File f = new File(location);
         if(f.exists() && f.isFile())
             return this.loadDatabase(location);
-        else
-        {
-            init();
-            return 1;
-        }
+        init();
+        return 1;
     }
     
     public int loadDatabase(String name)
