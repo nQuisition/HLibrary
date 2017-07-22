@@ -10,7 +10,10 @@ import com.nquisition.hlibrary.ui.DatabaseViewer;
 import com.nquisition.hlibrary.ui.GalleryViewer;
 import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.model.Database;
+import com.nquisition.hlibrary.model.DatabaseInterface;
 import com.nquisition.hlibrary.model.GImage;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.nquisition.hlibrary.console.HConsole;
 import com.nquisition.hlibrary.console.HConsoleAppender;
 import com.nquisition.hlibrary.console.IConsoleListener;
@@ -22,7 +25,9 @@ import java.util.*;
 import javafx.application.Platform;
 import com.nquisition.util.Properties;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 
 import org.apache.logging.log4j.LogManager;
@@ -66,7 +71,7 @@ public class HLibrary extends Application
         HConsoleAppender.setHConsole(console);
         
         logger.info("-------------------------");
-        int res = Properties.read("C:\\NetBeansProjects\\HLibrary\\config.txt");
+        int res = Properties.read("C:\\NetBeansProjects\\HLibrary\\config1.txt");
         //HLogger runslogger = new HLogger("hlibrary.runs", true, "log_runs.txt");
         if(res != 0)
         {
@@ -225,6 +230,65 @@ public class HLibrary extends Application
                 gw.show();
             }
         }
+        else if(params.size() > 0 && params.get(0).equals("-test"))
+        {
+        	logger.info("[TEST] Starting in global mode");
+        	DatabaseInterface dbInterface = new DatabaseInterface(null);
+        	dbInterface.readDatabaseFromJson("D:\\test_json.txt", false);
+            db = dbInterface.getActiveDatabase();
+
+            db.setLocation("D:\\test_json.txt");
+            
+            db.sortFolders();
+            db.info();
+            
+            /*Database db1 = new Database(false);
+            db1.setLocation(Properties.get("dbroot","dbname"));
+            db1.loadDatabase();
+            db1.info();*/
+
+            ArrayList<GImage> images = db.getImages();
+            ArrayList<String> tags = new ArrayList<>();
+            for(GImage img : images)
+            {
+                ArrayList<String> tgs = img.getTags();
+                for(String t : tgs)
+                {
+                    if(!tags.contains(t))
+                        tags.add(t);
+                }
+            }
+            Collections.sort(tags);
+            logger.info("{} tags found", tags.size());
+            String alltags = "";
+            for(String t : tags)
+                alltags += t.toUpperCase() + " ";
+            logger.debug(alltags);
+
+            //db.computeSimilarityStrings();
+
+            fviewer = new FolderViewer(db, Properties.get("galroot"));
+            fviewer.setOnCloseRequest(event -> {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                try
+                {
+                	db.nullifyEmptyStrings();
+                	String json = gson.toJson(db);
+                	PrintWriter out = new PrintWriter("D:\\test_json.txt");
+                	out.write(json);
+                	out.close();
+                }
+                catch(IOException e)
+                {
+                	logger.warn("Saving database while closing failed!");
+                	e.printStackTrace();
+                }
+                logger.info("Closing application");
+                Platform.exit();
+            });
+            logger.info("Initialization complete");
+            fviewer.show();
+        }
         else
         {
             //logger = new HLogger("hlibrary.main", true, Properties.get("dbroot") + "log_main.txt");
@@ -303,6 +367,19 @@ public class HLibrary extends Application
                     logger.warn("Saving database while closing failed!");
                 }
                 logger.info("Closing application");
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                try
+                {
+                	db.nullifyEmptyStrings();
+                	String json = gson.toJson(db);
+                	PrintWriter out = new PrintWriter("D:\\test_json.txt");
+                	out.write(json);
+                	out.close();
+                }
+                catch(IOException e)
+                {
+                	e.printStackTrace();
+                }
                 Platform.exit();
             });
             logger.info("Initialization complete");

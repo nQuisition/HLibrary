@@ -13,10 +13,16 @@ import java.util.*;
  */
 public class GEntry
 {
-    private String comment;
+    private String comment = null;
     private ArrayList<String> tags;
     private long added = -1, lastmod = -1, viewed = -1;
     private int viewcount = 0;
+    
+    public void nullifyEmptyStrings()
+    {
+    	if(comment != null && (comment.equals("") || comment.equals("null")))
+    		comment = null;
+    }
     
     public long getAdded()
     {

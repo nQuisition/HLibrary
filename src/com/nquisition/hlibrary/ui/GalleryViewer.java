@@ -38,6 +38,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,6 +53,8 @@ public class GalleryViewer extends HConsoleStage
     private static final Logger logger_global = LogManager.getLogger(GalleryViewer.class.getName()+".global");
     
     private final Logger logger;
+    
+    private final GalleryViewer instance = this;
     
     //TODO move to UI control
     private HStyleSheet styleSheet = new HStyleSheet();
@@ -1161,10 +1164,11 @@ public class GalleryViewer extends HConsoleStage
             commentArea.setPrefRowCount(10);
             commentArea.setPrefColumnCount(100);
             commentArea.setWrapText(true);
-            commentArea.setPrefWidth(300);
-            commentArea.setMaxWidth(300);
+            //commentArea.setPrefWidth(300);
+            //commentArea.setMaxWidth(300);
             VBox commentAreaWrapper = new VBox();
             //FIXME redo the whole commentArea thing
+            commentAreaWrapper.setMaxWidth(300);
             commentAreaWrapper.visibleProperty().bind(commentArea.visibleProperty());
             commentAreaWrapper.getChildren().addAll(commentArea);
             commentAreaWrapper.setAlignment(Pos.CENTER_LEFT);
@@ -1245,6 +1249,11 @@ public class GalleryViewer extends HConsoleStage
         	return tags.visibleProperty();
         }
         
+        public BooleanProperty getCommentVisibleProperty()
+        {
+        	return commentArea.visibleProperty();
+        }
+        
         public void setTagsVisible(boolean visible)
         {
             tags.setVisible(visible);
@@ -1307,12 +1316,14 @@ public class GalleryViewer extends HConsoleStage
     		//TODO when exiting tagging mode, "tags" visibility gets set to true
     		//regardless of what it was before entering tagging mode
     		CheckBox cbDisplayTags = HFXFactory.createBoundCheckBox("Display tags", infoOverlay.getTagsVisibleProperty());
+    		CheckBox cbDisplayComment = HFXFactory.createBoundCheckBox("Display comment", infoOverlay.getCommentVisibleProperty());
     		CheckBox cbTagging = HFXFactory.createBoundCheckBox("Tagging mode", tagging);
     		//Disable the "Display tags" checkbox while tagging
     		cbDisplayTags.disableProperty().bind(tagging);
     		CheckBox cbLimitToFavs = HFXFactory.createBoundCheckBox("Limit to favs", limitToFav);
     		CheckBox cbForceRotate = HFXFactory.createBoundCheckBox("Force rotate", forceRotate);
-    		generalGroupContent.getChildren().addAll(cbDisplayInfo, cbDisplayTags, cbTagging, cbLimitToFavs, cbForceRotate);
+    		generalGroupContent.getChildren().addAll(cbDisplayInfo, cbDisplayTags, cbDisplayComment,
+    				cbTagging, cbLimitToFavs, cbForceRotate);
     		
     		//* IMAGE ACTIONS GROUP
     		Label imageGroupLabel = HFXFactory.createSectionTitleLabel("Image Actions", styleSheet);
@@ -1343,8 +1354,31 @@ public class GalleryViewer extends HConsoleStage
     		ratingBar.bindCurRating(curRating);
     		ratingGroupContent.getChildren().addAll(ratingBar.getContainer());
     		
+    		//* TEST
+    		Label testGroupLabel = HFXFactory.createSectionTitleLabel("Test", styleSheet);
+    		VBox testGroupContent = new VBox();
+    		testGroupContent.setPadding(new Insets(10,10,10,10));
+    		testGroupContent.setSpacing(2);
+    		Button testProgress = HFXFactory.createUnboundedButton("Test progress window");
+    		testProgress.setOnAction(event -> {
+    			Stage dialog = new Stage();
+    			VBox dialogRoot = new VBox();
+    			ProgressBar pb = new ProgressBar(0);
+    			pb.setPrefWidth(400);
+    			dialogRoot.setAlignment(Pos.CENTER);
+    			dialogRoot.getChildren().addAll(pb);
+    			Scene dialogScene = new Scene(dialogRoot, 500, 100);
+    			dialog.setScene(dialogScene);
+    			dialog.initOwner(instance);
+    			dialog.initModality(Modality.APPLICATION_MODAL);
+    			dialog.show();
+    			
+    		});
+    		testGroupContent.getChildren().addAll(testProgress);
+    		
     		rightMenu.getChildren().addAll(generalGroupLabel, generalGroupContent,
-    				imageGroupLabel, imageGroupContent, ratingGroupLabel, ratingGroupContent);
+    				imageGroupLabel, imageGroupContent, ratingGroupLabel, ratingGroupContent,
+    				testGroupLabel, testGroupContent);
     		//TODO better way to stop the menu from taking the whole height?
     		VBox rightMenuTopDummy = new VBox();
     		rightMenuTopDummy.setPrefHeight(height);

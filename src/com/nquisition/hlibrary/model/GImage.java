@@ -26,14 +26,14 @@ public class GImage extends GEntry
     private static int NEXTID = 0;
     private int id;
     private String name;
-    private javafx.scene.image.Image img = null;
-    private GFolder parent;
+    private transient javafx.scene.image.Image img = null;
+    private transient GFolder parent;
     //private ArrayList<String> tags = new ArrayList<String>();
-    private GImageList list = null;
+    private transient GImageList list = null;
     private byte[] similarityString;
     
-    public static final int RESOLUTION = 8;
-    public static final String COMMENT_SEPARATOR = ">>";
+    public static final transient int RESOLUTION = 8;
+    public static final transient String COMMENT_SEPARATOR = ">>";
     
     public String toString()
     {
@@ -42,6 +42,14 @@ public class GImage extends GEntry
             res += tag + " ";
         res = res.trim() + "] " + name;
         return res;
+    }
+    
+    public GImage()
+    {
+    	this.resetTags();
+        name = "";
+        parent = null;
+        id = -1;
     }
     
     public GImage(String p)
@@ -356,6 +364,18 @@ public class GImage extends GEntry
         {
             System.out.println("InterruptedException : Problem rotating file " + getFullPath());
         }
+    }
+    
+    //TODO no good? But needed atm
+    public void setId(int id)
+    {
+    	this.id = id;
+    	NEXTID = NEXTID>id?NEXTID:id+1;
+    }
+    
+    public void setParent(GFolder parent)
+    {
+    	this.parent = parent;
     }
     
     public void setList(GImageList l)

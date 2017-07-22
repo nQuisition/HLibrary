@@ -18,9 +18,8 @@ import java.io.*;
 public class GFolder extends GEntry
 {
     private String path, alias;
-    private String altAliases;
     private String type;
-    private GFolder parent;
+    private transient GFolder parent;
     private ArrayList<GImage> images;
     private ArrayList<GFolder> subfolders;
     
@@ -29,26 +28,50 @@ public class GFolder extends GEntry
         return path;
     }
     
-    public GFolder(String p)
+    public GFolder()
     {
-        path = p;
-        alias = p.substring(p.lastIndexOf('\\') + 1);
-        type = "";
+        path = "";
+        alias = "";
+        type = null;
         parent = null;
         images = new ArrayList<GImage>();
         subfolders = new ArrayList<GFolder>();
         this.resetTags();
     }
     
+    public GFolder(String p)
+    {
+    	this();
+        path = p;
+        if(p.endsWith("\\"))
+        	p = p.substring(0, p.length()-1);
+        alias = p.substring(p.lastIndexOf('\\') + 1);
+    }
+    
     public GFolder(String p, GFolder par)
     {
-        path = p;
-        alias = p.substring(p.lastIndexOf('\\') + 1);
-        type = "";
+        this(p);
         parent = par;
-        images = new ArrayList<GImage>();
-        subfolders = new ArrayList<GFolder>();
-        this.resetTags();
+    }
+    
+    @Override
+	public void nullifyEmptyStrings()
+    {
+    	super.nullifyEmptyStrings();
+    	if(type != null && (type.equals("") || type.equals("null")))
+    		type = null;
+    	if(alias == null || alias.equals("") || alias.equals("null"))
+    	{
+    		String temp = path;
+    		if(temp.endsWith("\\"))
+    			temp = temp.substring(0, temp.length()-1);
+    		alias = temp.substring(temp.lastIndexOf('\\') + 1);
+    	}
+    	
+    	for(GImage image : images)
+    		image.nullifyEmptyStrings();
+    	for(GFolder folder : subfolders)
+    		folder.nullifyEmptyStrings();
     }
     
     public int getRating()
@@ -155,6 +178,11 @@ public class GFolder extends GEntry
     {
         f.setParent(this);
         subfolders.add(f);
+    }
+    
+    public void setPath(String path)
+    {
+    	this.path = path;
     }
     
     public void setParent(GFolder par)

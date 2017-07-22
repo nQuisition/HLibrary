@@ -26,25 +26,25 @@ import org.apache.logging.log4j.Logger;
  */
 public class Database
 {
-    private static final Logger logger_local = LogManager.getLogger(Database.class.getName()+".local");
-    private static final Logger logger_global = LogManager.getLogger(Database.class.getName()+".global");
+    private static final transient Logger logger_local = LogManager.getLogger(Database.class.getName()+".local");
+    private static final transient Logger logger_global = LogManager.getLogger(Database.class.getName()+".global");
     
-    private final Logger logger;
+    private final transient Logger logger;
     
-    private final boolean local;
+    private final transient boolean local;
     
-    public static final String DATA_SEPARATOR = "?";
-    public static final String FOLDER_START = "<<";
-    public static final String FOLDER_END = ">>";
-    public static final String FOLDER_ROOT = "*";
+    public static final transient String DATA_SEPARATOR = "?";
+    public static final transient String FOLDER_START = "<<";
+    public static final transient String FOLDER_END = ">>";
+    public static final transient String FOLDER_ROOT = "*";
     
     //private ArrayList<GImage> images;
     private ArrayList<GFolder> folders;
-    private ArrayList<GImageList> lists;
-    
+    //TODO untransient
+    private transient ArrayList<GImageList> lists;
     private TagDictionary dict;
     
-    private String location;
+    private transient String location;
     
     public final void init()
     {
@@ -90,6 +90,23 @@ public class Database
     public void setLocation(String l)
     {
         location = l;
+    }
+    
+    public void info()
+    {
+    	logger.info("Number of root folders: " + folders.size());
+    	logger.info("Number of images: " + getNumImages());
+    }
+    
+    public void nullifyEmptyStrings()
+    {
+    	for(GFolder folder : folders)
+    		folder.nullifyEmptyStrings();
+    }
+    
+    public void setTagDictionary(TagDictionary dict)
+    {
+    	this.dict = dict;
     }
     
     public GFolder getFolderByName(String p)
@@ -145,6 +162,15 @@ public class Database
         res.setTags(tagArray, true);
             
         return res;
+    }
+    
+    public void addGFolder(GFolder folder, boolean check)
+    {
+    	if(check)
+    		for(GFolder f : folders)
+    			if(f.getPath().equals(folder.getPath()))
+    				return;
+    	folders.add(folder);
     }
     
     public GFolder getAddFolder(String path, GFolder par, boolean root)

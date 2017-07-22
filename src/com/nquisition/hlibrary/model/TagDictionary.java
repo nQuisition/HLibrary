@@ -14,13 +14,13 @@ import java.io.*;
  */
 public class TagDictionary
 {
-    public static final String SEPARATOR = "?";
+    public static final transient String SEPARATOR = "?";
     private Map<String, String> dict;
-    private String location;
+    private transient String location;
     
     public void init()
     {
-        dict = new TreeMap<String, String>();
+        dict = new TreeMap<>();
     }
     
     public TagDictionary()
