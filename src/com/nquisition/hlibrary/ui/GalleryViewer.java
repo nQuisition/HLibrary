@@ -868,6 +868,11 @@ public class GalleryViewer extends HConsoleStage
         resetImage(false, false);
     }
     
+    //FIXME redo, this is just temporary method
+    public void addKeyEventHandler(EventHandler<? super KeyEvent> handler) {
+    	scene.addEventHandler(KeyEvent.KEY_PRESSED, handler);
+    }
+    
     private class TaggingOverlay
     {
         private final StackPane taggingPane;
@@ -1227,7 +1232,8 @@ public class GalleryViewer extends HConsoleStage
         {
         	String[] curNamePieces = gal.getCurrentNameFullPiecewise();
         	String[] infoText = new String[5];
-        	infoText[0] = gal.getCurPos()+1 + "/" + gal.getSize() + " ";
+        	infoText[0] = gal.getCurrentPosition()+1 + "/" + gal.getSize() + " ("
+        					+ (gal.getCurrentPositionWithinFolder()+1) + "/" + gal.getCurrentFolderSize() + ") ";
         	infoText[1] = curNamePieces[0];
         	infoText[2] = curNamePieces.length < 3 ? "" : curNamePieces[1];
         	infoText[3] = curNamePieces[curNamePieces.length-1];

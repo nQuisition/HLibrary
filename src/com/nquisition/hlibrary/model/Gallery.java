@@ -19,10 +19,10 @@ import java.text.*;
  */
 public class Gallery
 {
-    private ArrayList<GImage> images;
+    private List<GImage> images;
     private int curimg = -1;
     private int numcache = 2;
-    private ArrayList<GImage> cached = new ArrayList<GImage>();
+    private List<GImage> cached = new ArrayList<>();
     
     public static final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
     
@@ -30,11 +30,11 @@ public class Gallery
     
     public Gallery(Database d)
     {
-        images = new ArrayList<GImage>();
+        images = new ArrayList<>();
         db = d;
     }
     
-    public void addImages(ArrayList<GImage> imgs)
+    public void addImages(List<GImage> imgs)
     {
         for(GImage img : imgs)
             images.add(img);
@@ -423,9 +423,62 @@ public class Gallery
         return images.size();
     }
     
-    public int getCurPos()
+    public int getCurrentPosition()
     {
         return curimg;
+    }
+    
+    public int getCurrentPositionWithinFolder()
+    {
+    	//TODO better way?
+    	GFolder curFolder = images.get(curimg).getParent();
+    	int index = curimg;
+    	while(true)
+    	{
+    		index--;
+    		if(index < 0)
+    			//index = images.size()-1;
+    			break;
+    		/*if(index == curimg)
+    			break;*/
+    		if(images.get(index).getParent() != curFolder)
+    			//return curimg > index ? curimg-index : curimg + images.size() - index;
+    			return curimg-index-1;
+    	}
+    	return curimg;
+    }
+    
+    public int getCurrentFolderSize()
+    {
+    	//TODO better way?
+    	GFolder curFolder = images.get(curimg).getParent();
+    	int index = curimg;
+    	int start = 0;
+    	while(true)
+    	{
+    		index--;
+    		if(index < 0)
+    			break;
+    		/*if(index == curimg)
+    			break;*/
+    		if(images.get(index).getParent() != curFolder)
+    		{
+    			start = index + 1;
+    			break;
+    		}
+    	}
+    	index = curimg;
+    	while(true)
+    	{
+    		index++;
+    		if(index >= images.size())
+    			break;
+    		/*if(index == curimg)
+    			break;*/
+    		if(images.get(index).getParent() != curFolder)
+    			break;
+    	}
+    	return index-start;
     }
     
     public void setTags(ArrayList<String> t)
@@ -449,7 +502,7 @@ public class Gallery
     {
         if(curimg < 0 || images.size() <= 0)
             return "";
-        ArrayList<String> tags = images.get(curimg).getTags();
+        List<String> tags = images.get(curimg).getTags();
         String res = "";
         for(String tag : tags)
             res += tag + " ";

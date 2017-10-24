@@ -17,11 +17,11 @@ import java.io.*;
  */
 public class GFolder extends GEntry
 {
-    private String path, alias;
-    private String type;
+    private String path;
+    private String alias;
     private transient GFolder parent;
-    private ArrayList<GImage> images;
-    private ArrayList<GFolder> subfolders;
+    private List<GImage> images;
+    private List<GFolder> subfolders;
     
     public String toString()
     {
@@ -32,10 +32,9 @@ public class GFolder extends GEntry
     {
         path = "";
         alias = "";
-        type = null;
         parent = null;
-        images = new ArrayList<GImage>();
-        subfolders = new ArrayList<GFolder>();
+        images = new ArrayList<>();
+        subfolders = new ArrayList<>();
         this.resetTags();
     }
     
@@ -58,8 +57,6 @@ public class GFolder extends GEntry
 	public void nullifyEmptyStrings()
     {
     	super.nullifyEmptyStrings();
-    	if(type != null && (type.equals("") || type.equals("null")))
-    		type = null;
     	if(alias == null || alias.equals("") || alias.equals("null"))
     	{
     		String temp = path;
@@ -109,6 +106,11 @@ public class GFolder extends GEntry
         return null;
     }
     
+    public int getNumImages()
+    {
+    	return images.size();
+    }
+    
     public GFolder getTopLevelParent()
     {
     	if(parent != null)
@@ -131,16 +133,6 @@ public class GFolder extends GEntry
         return alias;
     }
     
-    public String getType()
-    {
-        return type;
-    }
-    
-    public String getFullAliasedName()
-    {
-        return type + " - " + alias;
-    }
-    
     public String getPath()
     {
         return path;
@@ -151,12 +143,12 @@ public class GFolder extends GEntry
         return parent;
     }
     
-    public ArrayList<GImage> getImages()
+    public List<GImage> getImages()
     {
         return images;
     }
     
-    public void getAllImages(ArrayList<GImage> list)
+    public void getAllImages(List<GImage> list)
     {
         for(GImage i : images)
             list.add(i);
@@ -164,7 +156,7 @@ public class GFolder extends GEntry
             f.getAllImages(list);
     }
     
-    public ArrayList<GFolder> getSubFolders()
+    public List<GFolder> getSubFolders()
     {
         return subfolders;
     }
@@ -188,11 +180,6 @@ public class GFolder extends GEntry
     public void setParent(GFolder par)
     {
         parent = par;
-    }
-    
-    public void setType(String t)
-    {
-        type = t;
     }
     
     public void setAlias(String a)
@@ -379,5 +366,16 @@ public class GFolder extends GEntry
             if(img == images.get(i))
                 return i;
         return -1;
+    }
+    
+    public double getFavPercentage(boolean recursive) {
+    	double numFavs = images.stream().filter(a -> a.hasTag("fav")).count();
+    	return numFavs/images.size();
+    }
+    
+    public void sortImages(Comparator<GImage> comp) {
+    	Collections.sort(this.images, comp);
+        for(GFolder f : this.subfolders)
+            f.sortImages(comp);
     }
 }

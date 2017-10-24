@@ -16,6 +16,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+
 import javax.imageio.ImageIO;
 import uk.co.jaimon.test.SimpleImageInfo;
 import java.util.*;
@@ -175,8 +182,9 @@ public class FileUtils
         {
             return null;
         }
-        
-        return res;
+        if(res.endsWith("\\"))
+        	res = res.substring(0, res.length()-1);
+        return res.substring(res.lastIndexOf('\\')+1);
     }
     
     //TODO move to utility class\
@@ -686,5 +694,64 @@ public class FileUtils
             return -3;
         }
         return 0;
+    }
+    
+    public static String toProperFolderPath(String path) {
+    	if(!path.endsWith("\\"))
+    		path = path + "\\";
+    	return path;
+    }
+    
+    public static void setFileCreationDate(String filePath, FileTime creationDate) {
+    	try {
+	        Path p = Paths.get(filePath);
+	        Files.setAttribute(p, "creationTime", creationDate);
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
+    }
+    
+    public static void setFileCreationDate(String filePath, Date creationDate) {
+	       FileTime time = FileTime.fromMillis(creationDate.getTime());
+	       setFileCreationDate(filePath, time);
+    }
+    
+    public static void moveFileToFolder(String filePath, String folderPath) {
+    	File file = new File(filePath);
+    	String name = file.getName();
+    	String properRoot = folderPath.endsWith("\\")?folderPath:folderPath+"\\";
+    	File target = new File(properRoot + name);
+        int counter = 1;
+        while(target.exists())
+        {
+            int pos = file.getName().lastIndexOf('.');
+            name = file.getName().substring(0, pos) + " (" + counter + ")" + file.getName().substring(pos);
+            counter++;
+            target = new File(properRoot + name);
+        }
+        
+        file.renameTo(target);
+        file.delete();
+    }
+    
+    public static void createFolderWithDate(String path, FileTime creationDate) {
+    	File dir = new File(path);
+    	dir.mkdirs();
+    	setFileCreationDate(path, creationDate);
+    }
+    
+    public static FileTime getCreationDate(String path) {
+    	FileTime ft = null;
+    	try {
+	    	File file = new File(path);
+	    	ft = Files.readAttributes(file.toPath(), BasicFileAttributes.class).creationTime();
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
+    	return ft;
+    }
+    
+    public static void createFolderWithFileDate(String path, String filePath) {
+	    createFolderWithDate(path, getCreationDate(filePath));
     }
 }

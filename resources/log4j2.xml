@@ -57,5 +57,7 @@
             <AppenderRef ref="RunsFile" level="info" />
             <AppenderRef ref="GlobalFile" level="info" />
         </Logger>
+        <Logger level="debug" name="com.nquisition.hlibrary.model.DatabaseInterface">
+        	<AppenderRef ref="RunsFile" level="info"></AppenderRef></Logger>
     </Loggers>
 </Configuration>

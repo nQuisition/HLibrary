@@ -6,14 +6,16 @@
 package com.nquisition.hlibrary.model;
 
 import com.nquisition.hlibrary.util.CreationTimeGFolderComparator;
-import com.nquisition.hlibrary.ui.GalleryViewer;
+import com.nquisition.hlibrary.util.CreationTimeGImageComparator;
 import com.nquisition.hlibrary.Utils;
 import com.nquisition.hlibrary.util.WindowsExplorerFileComparator;
 import com.nquisition.util.Properties;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.Map;
@@ -40,7 +42,7 @@ public class Database
     
     //private ArrayList<GImage> images;
     private ArrayList<GFolder> folders;
-    //TODO untransient
+    //TODO untransient, fix unnecessary info in GImage
     private transient ArrayList<GImageList> lists;
     private TagDictionary dict;
     
@@ -102,6 +104,8 @@ public class Database
     {
     	for(GFolder folder : folders)
     		folder.nullifyEmptyStrings();
+    	for(GImageList list : lists)
+    		list.nullifyEmptyStrings();
     }
     
     public void setTagDictionary(TagDictionary dict)
@@ -401,19 +405,8 @@ public class Database
     {
         logger.info("Saving database to \"{}\"", name);
         File file = new File(name);
-        BufferedWriter bw;
-        try
-        {
-            bw = new BufferedWriter(new OutputStreamWriter(
-        new FileOutputStream(file), "UTF-8"));
-        }
-        catch(IOException e)
-        {
-            logger.error("Cannot open file \"" + name + "\" to save database!", e);
-            return -1;
-        }
         
-        try
+        try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8")))
         {
             bw.write(dict.getLocation()+"\n");
             dict.saveDict();
@@ -434,7 +427,7 @@ public class Database
         return 0;
     }
     
-    private void writeFolder(GFolder f, ArrayList<GFolder> roots, 
+    private void writeFolder(GFolder f, List<GFolder> roots, 
             BufferedWriter bw, boolean initial) throws IOException
     {
         String str = FOLDER_START;
@@ -486,20 +479,9 @@ public class Database
         if(_fsize > 0)
             logger.info("Currently the database contains {} root folders and {} images", _fsize, this.getNumImages());
         
-        BufferedReader br;
-        try
-        {
-            br = new BufferedReader(new InputStreamReader(
-                      new FileInputStream(name), "UTF8"));
-        }
-        catch(IOException e)
-        {
-            logger.error("Cannot open file \"" + name + "\" to load database!", e);
-            return -1;
-        }
         String line;
         
-        try
+        try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(name), "UTF8")))
         {
             line = br.readLine();
             logger.info("Dictionary set to \"{}\"", line);
@@ -663,49 +645,88 @@ public class Database
         return dict.getTag(abbr);
     }
     
-    public void computeSimilarityStrings() throws IOException
+    //FIXME redo - this is currently for testing only
+    public Map<GImage, List<GImage>> computeSimilarityStrings() throws IOException
     {
         //TODO use Properties
-        BufferedWriter bw = new BufferedWriter(new FileWriter(new File("C:\\Test\\file.txt")));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(new File("C:\\Test\\file_simil.txt")));
         ArrayList<GImage> images = this.getImages();
-        for(int i = 0; i < 4000; i++)
+        for(int i = 0; i < images.size(); i++)
         {
-            System.out.print(i+1 + "/" + 4000 + " - ");
-            if(!images.get(i).computeSimilarityString())
+        	if(images.get(i).isSimilarityBytesComputed()) {
+        		images.get(i).computeWhiteness();
+        		continue;
+        	}
+            System.out.print(i+1 + "/" + images.size() + " - ");
+            if(!images.get(i).computeSimilarity())
                 bw.write("Problem loading file " + images.get(i).getFullPath() + "\n");
+            images.get(i).computeWhiteness();
             //else
             //    bw.write(i+1 + "/1000 - " + images.get(i).getSimilarityString().length() + " :: " + images.get(i).getSimilarityString() + "\n");
         }
         bw.close();
-        ArrayList<GImage> matches = new ArrayList<>();
-        for(int i = 0; i < 4000; i++)
+        Map<GImage, List<GImage>> res = new HashMap<>();
+        //Map<GImage, List<GImage>> res = Collections.synchronizedMap(new HashMap<>());
+        for(int i = 0; i < images.size(); i++)
         {
             GImage img = images.get(i);
+            if(img.getWhiteness() >= 0.99d)
+            	continue;
             //System.out.println(i+1+"/1000 " + img.getFullPath());
-            for(int j = i+1; j < 4000; j++)
+            for(int j = 0; j < images.size(); j++)
             {
-                int diff = img.differenceFrom(images.get(j), 100, false);
-                if(diff < 100 && diff >= 0)
+            	if(i == j)
+            		continue;
+            	if(images.get(j).getWhiteness() >= 0.99d)
+                	continue;
+            	int threshold = 1000;
+                int diff = img.differenceFrom(images.get(j), threshold, false);
+                if(diff < threshold && diff >= 0)
                 {
-                    if(img.getParent() != images.get(j).getParent())
-                    {
-                        matches.add(img);
-                        matches.add(images.get(j));
-                        System.out.println(diff + " " + img.getFullPath() + " :: " + images.get(j).getFullPath());
-                    }
+                    //if(img.getParent() != images.get(j).getParent())
+                    //{
+                    	if(!res.containsKey(img))
+                    		res.put(img, new ArrayList<>());
+                    	res.get(img).add(images.get(j));
+                        //System.out.println(diff + " " + img.getFullPath() + " :: " + images.get(j).getFullPath());
+                    //}
                 }
             }
         }
-        
-        if(matches.size()>0)
-        {
-            Gallery gal = new Gallery(this);
-            gal.addImages(matches);
-
-            GalleryViewer gw = new GalleryViewer(this);
-            gw.setGallery(gal);
-            gw.show();
-        }
+        /*images.stream().parallel().forEach((img) -> {
+        	if(img.getWhiteness() >= 0.99d)
+            	return;
+            //System.out.println(i+1+"/1000 " + img.getFullPath());
+            for(int j = 0; j < images.size(); j++) {
+            	GImage image2 = images.get(j);
+            	
+            	if(img == image2)
+            		continue;
+            	if(image2.getWhiteness() >= 0.99d)
+                	continue;
+            	int threshold = 1000;
+                int diff = img.differenceFrom(images.get(j), threshold, false);
+                if(diff < threshold && diff >= 0) {
+                    //if(img.getParent() != images.get(j).getParent())
+                    //{
+                    	if(!res.containsKey(img))
+                    		res.put(img, new ArrayList<>());
+                    	res.get(img).add(images.get(j));
+                        //System.out.println(diff + " " + img.getFullPath() + " :: " + images.get(j).getFullPath());
+                    //}
+                }
+            }
+        });*/
+        return res;
+    }
+    
+    public void computeWhiteness() {
+    	for(GImage img : this.getImages())
+    		img.computeWhiteness();
+    }
+    
+    public String getLocation() {
+    	return location;
     }
     
     public void sortFolders()
@@ -715,9 +736,17 @@ public class Database
         for(GFolder f : this.folders)
             f.sortSubfolders(comp);
     }
+    
+    //TODO temp
+    public void sortImagesByCreated() {
+    	Comparator<GImage> comp = new CreationTimeGImageComparator();
+        for(GFolder f : this.folders)
+            f.sortImages(comp);
+    }
 }
 
 class FolderListPair
 {
-    public ArrayList<GFolder> fldrs, roots;
+    public List<GFolder> fldrs;
+    public List<GFolder> roots;
 }

@@ -11,12 +11,16 @@ import java.util.*;
  *
  * @author Master
  */
-public class GEntry
+public class GEntry implements IPropertyContainer
 {
     private String comment = null;
-    private ArrayList<String> tags;
-    private long added = -1, lastmod = -1, viewed = -1;
+    private List<String> tags;
+    private long added = -1;
+    private long lastmod = -1;
+    private long viewed = -1;
     private int viewcount = 0;
+    
+    private Map<String, Object> customProps = new HashMap<>();
     
     public void nullifyEmptyStrings()
     {
@@ -105,10 +109,10 @@ public class GEntry
     
     public void resetTags()
     {
-        tags = new ArrayList<String>();
+        tags = new ArrayList<>();
     }
     
-    public void setTags(ArrayList<String> t, boolean check)
+    public void setTags(List<String> t, boolean check)
     {
         resetTags();
         for(String tag : t)
@@ -122,10 +126,8 @@ public class GEntry
     
     public void addTag(String t, boolean check)
     {
-        if(check)
-        {
-            if(this.hasTag(t))
-                return;
+        if(check && this.hasTag(t)) {
+        	return;
         }
         tags.add(t.toLowerCase());
         sortTags();
@@ -151,7 +153,7 @@ public class GEntry
         return false;
     }
     
-    public boolean hasAllTags(ArrayList<String> tgs)
+    public boolean hasAllTags(List<String> tgs)
     {
         for(String t : tgs)
             if(!this.hasTag(t))
@@ -159,7 +161,7 @@ public class GEntry
         return true;
     }
     
-    public boolean hasNoTags(ArrayList<String> tgs)
+    public boolean hasNoTags(List<String> tgs)
     {
         for(String t : tgs)
             if(this.hasTag(t))
@@ -167,7 +169,7 @@ public class GEntry
         return true;
     }
     
-    public ArrayList<String> getTags()
+    public List<String> getTags()
     {
         return tags;
     }
@@ -176,4 +178,14 @@ public class GEntry
     {
         Collections.sort(tags);
     }
+
+	@Override
+	public void setProperty(String name, Object value) {
+		customProps.put(name, value);
+	}
+
+	@Override
+	public Object getProperty(String name) {
+		return customProps.getOrDefault(name, null);
+	}
 }

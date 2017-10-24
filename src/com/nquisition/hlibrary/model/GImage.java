@@ -7,8 +7,13 @@ package com.nquisition.hlibrary.model;
 
 import java.io.File;
 import java.util.*;
+import java.util.List;
 import java.io.*;
+
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.*;
+import javafx.scene.image.Image;
+
 import javax.imageio.*;
 import java.awt.image.*;
 import java.awt.*;
@@ -30,9 +35,14 @@ public class GImage extends GEntry
     private transient GFolder parent;
     //private ArrayList<String> tags = new ArrayList<String>();
     private transient GImageList list = null;
-    private byte[] similarityString;
+    //FIXME quick and dirty fix, mb serialize GImageList's instead?
+    private Integer listId = null, listPos = null;
+    private String similarityString = null;
+    private transient byte[] similarityBytes;
     
-    public static final transient int RESOLUTION = 8;
+    private transient double whiteness;
+    
+    public static final transient int RESOLUTION = 16;
     public static final transient String COMMENT_SEPARATOR = ">>";
     
     public String toString()
@@ -81,7 +91,7 @@ public class GImage extends GEntry
     
     public boolean isLoaded()
     {
-        return img == null?false:true;
+        return img != null;
     }
     
     public void load()
@@ -133,11 +143,8 @@ public class GImage extends GEntry
     	return parent==null?null:parent.getTopLevelParent();
     }
     
-    public boolean isOnTopLevel()
-    {
-    	if(parent == this.getTopLevelParent())
-    		return true;
-    	return false;
+    public boolean isOnTopLevel() {
+    	return (parent == this.getTopLevelParent());
     }
     
     public void clearParent()
@@ -150,29 +157,31 @@ public class GImage extends GEntry
         name = p;
     }
     
+    @Deprecated
     public String getString()
     {
         //id -> name -> listid -> listpos -> added -> viewed -> lastmod -> viewcount -> comment (>>) -> tags
         String separator = Database.DATA_SEPARATOR;
-        String res = "" + id + separator + name;
-        res += separator + ((list==null)?"-1":list.getID());
-        res += separator + ((list==null)?"-1":list.locate(this));
-        res += separator + this.getAdded();
-        res += separator + this.getViewed();
-        res += separator + this.getLastmod();
-        res += separator + this.getViewcount();
-        res += separator + this.getComment() + ">>";
+        StringBuilder res = new StringBuilder();
+        res.append(Integer.toString(id) + separator + name);
+        res.append(separator + ((list==null)?"-1":list.getID()));
+        res.append(separator + ((list==null)?"-1":list.locate(this)));
+        res.append(separator + this.getAdded());
+        res.append(separator + this.getViewed());
+        res.append(separator + this.getLastmod());
+        res.append(separator + this.getViewcount());
+        res.append(separator + this.getComment() + ">>");
         for(String tag : this.getTags())
-            res += separator + tag;
-        res += separator;
-        return res;
+        	res.append(separator + tag);
+        res.append(separator);
+        return res.toString();
     }
     
     public static GImage create(GFolder f, String name, boolean checkFileExists, int id, boolean addedNow)
     {
         if(checkFileExists)
         {
-            ArrayList<GImage> images = f.getImages();
+            List<GImage> images = f.getImages();
             for(GImage gi : images)
                 if(gi.getName().equalsIgnoreCase(name))
                     return null;
@@ -184,11 +193,11 @@ public class GImage extends GEntry
             img = new GImage(name, f, id);
         if(addedNow)
             img.setAddedNow();
-        //images.add(img);
         f.addImage(img);
         return img;
     }
     
+    @Deprecated
     public static GImage fromString(GFolder f, String str, boolean checkFileExists, Database db)
     {
         String line = str;
@@ -196,45 +205,45 @@ public class GImage extends GEntry
         int sepLength = separator.length();
         
         //id -> name -> listid -> listpos -> added -> viewed -> lastmod -> viewcount -> comment (>>) -> tags
-        int r_id = Integer.valueOf(line.substring(0, line.indexOf(separator)));
+        int rId = Integer.parseInt(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
-        String r_name = line.substring(0, line.indexOf(separator));
+        String rName = line.substring(0, line.indexOf(separator));
         line = line.substring(line.indexOf(separator)+sepLength);
-        int r_listid = Integer.valueOf(line.substring(0, line.indexOf(separator)));
+        int rListid = Integer.parseInt(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
-        int r_listpos = Integer.valueOf(line.substring(0, line.indexOf(separator)));
+        int rListpos = Integer.parseInt(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
 
-        long r_added = Long.valueOf(line.substring(0, line.indexOf(separator)));
+        long rAdded = Long.parseLong(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
-        long r_viewed = Long.valueOf(line.substring(0, line.indexOf(separator)));
+        long rViewed = Long.parseLong(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
-        long r_lastmod = Long.valueOf(line.substring(0, line.indexOf(separator)));
+        long rLastmod = Long.parseLong(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
-        int r_viewcount = Integer.valueOf(line.substring(0, line.indexOf(separator)));
+        int rViewcount = Integer.parseInt(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
-        String r_comment = line.substring(0, line.indexOf(GImage.COMMENT_SEPARATOR));
+        String rComment = line.substring(0, line.indexOf(GImage.COMMENT_SEPARATOR));
         line = line.substring(line.indexOf(GImage.COMMENT_SEPARATOR)+GImage.COMMENT_SEPARATOR.length()+sepLength);
         
-        GImage img = GImage.create(f, r_name, checkFileExists, r_id, false);
-        if(r_listid == -1)
+        GImage img = GImage.create(f, rName, checkFileExists, rId, false);
+        if(rListid == -1)
             img.setList(null);
         else
         {
-            GImageList l = db.getAddList(r_listid);
-            l.setImage(r_listpos, img);
+            GImageList l = db.getAddList(rListid);
+            l.setImage(rListpos, img);
         }
-        img.setAdded(r_added);
-        if(r_viewed >= 0)
-            img.setViewed(r_viewed);
-        if(r_lastmod >= 0)
-            img.setLastmod(r_lastmod);
-        img.setViewcount(r_viewcount);
-        if(r_comment != null && !r_comment.equals(""));
-            img.setComment(r_comment);
+        img.setAdded(rAdded);
+        if(rViewed >= 0)
+            img.setViewed(rViewed);
+        if(rLastmod >= 0)
+            img.setLastmod(rLastmod);
+        img.setViewcount(rViewcount);
+        if(rComment != null && !rComment.equals(""))
+            img.setComment(rComment);
             
         String str1 = line.replace(separator, " ").trim();
-        ArrayList<String> tagArray = new ArrayList<String>();
+        List<String> tagArray = new ArrayList<>();
         if(!str1.equalsIgnoreCase(""))
             tagArray = db.processTags(str1.split("\\s+"));
         
@@ -250,7 +259,7 @@ public class GImage extends GEntry
         return list.detachImage(this);
     }
     
-    public boolean nameFolderContains(ArrayList<String> tgs)
+    public boolean nameFolderContains(List<String> tgs)
     {
         for(String t : tgs)
             if(!this.nameFolderContains(t))
@@ -263,27 +272,43 @@ public class GImage extends GEntry
         return this.getFullPath().toLowerCase().contains(s.toLowerCase());
     }
     
-    public Byte getSimilarityStringByte(int i)
+    public Byte getSimilarityByte(int i)
     {
-        if(similarityString == null)
+        if(similarityBytes == null)
             return null;
-        return similarityString[i];
+        return similarityBytes[i];
+    }
+    
+    public void setSimilarityBytes(Byte[] bytes) {
+    	if(bytes == null) {
+    		similarityBytes = null;
+    		similarityString = null;
+    		return;
+    	}
+    	similarityBytes = new byte[bytes.length];
+    	for(int i = 0; i < bytes.length; i++)
+    		similarityBytes[i] = bytes[i];
+    	computeSimilarityString();
+    }
+    
+    public boolean isSimilarityBytesComputed() {
+    	return !(similarityBytes == null || similarityBytes.length != RESOLUTION*RESOLUTION);
     }
     
     public int differenceFrom(GImage img, int threshold, boolean orientation)
     {
         int res = 0;
-        if(similarityString == null)
+        if(similarityBytes == null)
             return -1;
         for(int i = 0; i < RESOLUTION*RESOLUTION; i++)
         {
             Byte b;
-            if((b = img.getSimilarityStringByte(i)) == null)
+            if((b = img.getSimilarityByte(i)) == null)
                 return -1;
             int b1 = (int)(b.byteValue())&0xFF;
-            int b2 = (int)(similarityString[i])&0xFF;
+            int b2 = (int)(similarityBytes[i])&0xFF;
             res += Math.abs(b1 - b2);
-            if(res > threshold)
+            if(threshold > 0 && res > threshold)
                 break;
         }
         
@@ -295,24 +320,27 @@ public class GImage extends GEntry
         for(int i = 0; i < RESOLUTION; i++)
             for(int j = 0; j < RESOLUTION; j++)
             {
-                Byte b = img.getSimilarityStringByte((RESOLUTION-j-1)*RESOLUTION + i);
+                Byte b = img.getSimilarityByte((RESOLUTION-j-1)*RESOLUTION + i);
                 int b1 = (int)(b.byteValue())&0xFF;
-                b = img.getSimilarityStringByte(j*RESOLUTION + RESOLUTION-i-1);
+                b = img.getSimilarityByte(j*RESOLUTION + RESOLUTION-i-1);
                 int b2 = (int)(b.byteValue())&0xFF;
-                int bb = (int)(similarityString[i*RESOLUTION + j])&0xFF;
+                int bb = (int)(similarityBytes[i*RESOLUTION + j])&0xFF;
                 res1 += Math.abs(b1 - bb);
                 res2 += Math.abs(b2 - bb);
-                if(res1 > threshold && res2 > threshold)
+                if(threshold > 0 && res1 > threshold && res2 > threshold)
                     break;
             }
         return Math.min(res, Math.min(res1, res2));
     }
     
-    public boolean computeSimilarityString() throws IOException
+    public boolean computeSimilarity() throws IOException
     {
+    	if((similarityBytes == null || similarityBytes.length != RESOLUTION*RESOLUTION) && similarityString != null) {
+    		return similarityFromString(similarityString);
+    	}
         try
         {
-            similarityString = new byte[RESOLUTION*RESOLUTION];
+            similarityBytes = new byte[RESOLUTION*RESOLUTION];
             BufferedImage otherImage = ImageIO.read(new File(this.getFullPath()));
             BufferedImage newImage = new BufferedImage(RESOLUTION, RESOLUTION, BufferedImage.TYPE_BYTE_GRAY);
 
@@ -325,24 +353,53 @@ public class GImage extends GEntry
                 {
                     
                     byte gray = (byte)(newImage.getRGB(i, j)&0xFF);
-                    if(j == 0)
-                        System.out.print(gray + "::" + (newImage.getRGB(i, j)&0xFF) + " ");
                     if(gray == 0)
                         count++;
-                    similarityString[j*RESOLUTION + i] = gray;
+                    similarityBytes[j*RESOLUTION + i] = gray;
                 }
-            /*for(int i = 0; i < RESOLUTION; i++)
-                System.out.print(similarityString[i] + " ");*/
-            System.out.println(this.getFullPath());
         }
         catch(IIOException e)
         {
             System.out.println("Image " + this.getFullPath() + " cannot be loaded"
                     + "or has an unsupported format.");
-            similarityString = null;
+            similarityBytes = null;
             return false;
         }
+        computeSimilarityString();
         return true;
+    }
+    
+    public void computeSimilarityString() {
+    	StringBuilder bld = new StringBuilder();
+    	similarityString = "";
+    	for(int i = 0; i < similarityBytes.length; i++)
+    		bld.append((char)(similarityBytes[i]));
+    }
+    
+    public boolean similarityFromString(String similarity) {
+    	if(similarity.length() != RESOLUTION*RESOLUTION) {
+    		System.out.println("Error! " + this.getFullPath() + " Expected length " + RESOLUTION*RESOLUTION +
+    				", got " + similarity.length());
+    		return false;
+    	}
+    	similarityString = similarity;
+    	similarityBytes = new byte[RESOLUTION*RESOLUTION];
+    	for(int i = 0; i < similarity.length(); i++) {
+    		similarityBytes[i] = (byte)(similarity.charAt(i));
+    	}
+    	return true;
+    }
+    
+    public void computeWhiteness() {
+    	int sum = 0;
+    	for(int i = 0; i < RESOLUTION*RESOLUTION; i++) {
+            sum += (int)(similarityBytes[i])&0xFF;
+        }
+    	whiteness = (double)sum/(RESOLUTION*RESOLUTION)/255.0d;
+    }
+    
+    public double getWhiteness() {
+    	return whiteness;
     }
     
     public void rotate(boolean left, int sleepTime)
@@ -386,5 +443,22 @@ public class GImage extends GEntry
     public GImageList getList()
     {
         return list;
+    }
+    
+    public Image getSimilarityImage(int width, int height) throws IOException {
+    	if(similarityBytes == null || similarityBytes.length != RESOLUTION*RESOLUTION)
+    		this.computeSimilarity();
+    	BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+    	
+    	// Get the backing pixels, and copy into it
+    	byte[] data = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+    	for(int i = 0; i < data.length; i++) {
+    		int y = Math.floorDiv(i, width);
+    		int x = i%width;
+    		int xres = (int)Math.ceil((double)width/(double)RESOLUTION);
+    		int yres = (int)Math.ceil((double)height/(double)RESOLUTION);
+    		data[i] = similarityBytes[Math.floorDiv(x, xres) + Math.floorDiv(y, yres) * RESOLUTION];
+    	}
+    	return SwingFXUtils.toFXImage(image, null);
     }
 }

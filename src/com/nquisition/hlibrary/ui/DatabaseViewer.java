@@ -50,10 +50,8 @@ public class DatabaseViewer extends Stage
             addFolder(f, rootItem);
         }
         
-        tree.setOnDragDetected(new EventHandler<MouseEvent>() {
-            public void handle(MouseEvent event) {
-                System.out.println(((GFolder)((TreeItem)tree.getSelectionModel().getSelectedItem()).getValue()).getParent());
-            }
+        tree.setOnDragDetected((event) -> {
+        	System.out.println(((GFolder)((TreeItem)tree.getSelectionModel().getSelectedItem()).getValue()).getParent());
         });
         
         StackPane root = new StackPane();
