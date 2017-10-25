@@ -7,6 +7,8 @@ package com.nquisition.hlibrary.ui;
 
 import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.model.GFolder;
+import com.nquisition.hlibrary.HLibrary;
+import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.GImage;
 import static com.nquisition.hlibrary.model.GImage.RESOLUTION;
@@ -132,8 +134,9 @@ public class ThumbViewer extends HConsoleStage
                         Gallery gal = new Gallery(db);
                         gal.addImages(set);
             
-                        GalleryViewer gw = new GalleryViewer(db);
-                        gw.setGallery(gal);
+                        Map<String, Object> galParams = new HashMap<>();
+                        galParams.put("gallery", gal);
+                        UIView gw = HLibrary.getUIManager().buildFromFactory("GalleryViewer", galParams, false);
                         gw.show();
                         break;
                 }

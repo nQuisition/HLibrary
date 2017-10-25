@@ -7,6 +7,8 @@ package com.nquisition.hlibrary.ui;
 
 import com.nquisition.hlibrary.util.CreationTimeFileComparator;
 import com.nquisition.hlibrary.model.Gallery;
+import com.nquisition.hlibrary.HLibrary;
+import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.GImage;
 import java.io.*;
@@ -100,8 +102,9 @@ public class LocalDatabaseViewer extends HConsoleStage
 
         gal.addImages(start);
 
-        GalleryViewer gw = new GalleryViewer(db);
-        gw.setGallery(gal);
+        Map<String, Object> galParams = new HashMap<>();
+        galParams.put("gallery", gal);
+        UIView gw = HLibrary.getUIManager().buildFromFactory("GalleryViewer", galParams, false);
         gw.show();
         
     }

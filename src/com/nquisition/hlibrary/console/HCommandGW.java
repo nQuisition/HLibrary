@@ -5,7 +5,6 @@
  */
 package com.nquisition.hlibrary.console;
 
-import com.nquisition.hlibrary.ui.GalleryViewer;
 import com.nquisition.hlibrary.ui.HConsoleStage;
 import java.util.List;
 
@@ -23,6 +22,8 @@ public class HCommandGW extends HCommand
     @Override
     public int execute(HConsole console, List<String> params)
     {
+    	//FIXME doesn't work anymore!
+    	/*
         HConsoleStage stage = console.getFocus();
         if(stage == null || !(stage instanceof GalleryViewer))
             return INVALID_TARGET;
@@ -31,6 +32,7 @@ public class HCommandGW extends HCommand
         GalleryViewer focus = (GalleryViewer)stage;
         if(params.get(0).equalsIgnoreCase("next"))
             focus.nextImage();
+        */
         return STATUS_OK;
     }
     

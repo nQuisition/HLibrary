@@ -5,20 +5,20 @@
  */
 package com.nquisition.hlibrary;
 
-import com.nquisition.hlibrary.ui.FolderViewer;
-import com.nquisition.hlibrary.ui.DatabaseViewer;
-import com.nquisition.hlibrary.ui.GalleryViewer;
 import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.DatabaseInterface;
 import com.nquisition.hlibrary.model.GFolder;
 import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.console.HConsole;
 import com.nquisition.hlibrary.console.HConsoleAppender;
 import com.nquisition.hlibrary.console.IConsoleListener;
+import com.nquisition.hlibrary.ui.DefaultUIManager;
 import com.nquisition.hlibrary.ui.HConsoleStage;
 import com.nquisition.hlibrary.ui.HConsoleViewer;
 import com.nquisition.hlibrary.ui.SimilarityViewer;
+import com.nquisition.hlibrary.ui.UIManager;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -48,6 +48,7 @@ public class HLibrary extends Application
     private static HLibrary instance;
     
     private DatabaseInterface dbInterface;
+    private UIManager uiManager;
     private HConsole console;
     private List<String> params = null;
     
@@ -56,10 +57,6 @@ public class HLibrary extends Application
         String pid = ManagementFactory.getRuntimeMXBean().getName().replaceAll("@.*", "");
         ThreadContext.put("pid", pid);
     }
-    
-    private GalleryViewer viewer;
-    private FolderViewer fviewer;
-    private DatabaseViewer manager;
     
     @Override
     public void start(Stage primaryStage)
@@ -94,7 +91,16 @@ public class HLibrary extends Application
         /*System.out.println(params.size());
         for(String p : params)
             System.out.println(p);*/
+        
         dbInterface = new DatabaseInterface(null);
+        
+        //TODO putting dbinterface into uimanager before database is loaded - is it OK?
+        Map<String, Object> uiParams = new HashMap<>();
+        uiParams.put("dbInterface", dbInterface);
+        uiParams.put("root", Properties.get("galroot"));
+        uiManager = new DefaultUIManager();
+        uiManager.constructDefaults(uiParams);
+        
         if(!params.isEmpty() && params.get(0).equals("-v")) {
             this.startLocal();
         } else if(!params.isEmpty() && params.get(0).equals("-test")) {
@@ -269,20 +275,7 @@ public class HLibrary extends Application
             alltags += t.toUpperCase() + " ";
         logger.debug(alltags);
         
-        //SQLiteTest.install("database.db", db);
-
-        //db.computeSimilarityStrings();
-
-        //TODO
-        fviewer = new FolderViewer(dbInterface.getActiveDatabase(), Properties.get("galroot"));
-        fviewer.setOnCloseRequest(event -> {
-            if(!dbInterface.saveDatabase()) {
-            	//TODO saving failed, prompt!
-            	
-            }
-            logger.info("Closing application");
-            Platform.exit();
-        });
+        UIView fviewer = uiManager.buildFromFactory("FolderViewer", true);
         logger.info("Initialization complete");
         fviewer.show();
     }
@@ -353,18 +346,10 @@ public class HLibrary extends Application
 
             gal.addImages(dbInterface.getImages());
 
-            //TODO
-            GalleryViewer gw = new GalleryViewer(dbInterface.getActiveDatabase());
-            gw.setGallery(gal, fname);
-            gw.setOnCloseRequest(event -> {
-            	if(!dbInterface.saveDatabase()) {
-                	//TODO saving failed, prompt!
-                }
-                logger.info("Closing application");
-                Platform.exit();
-                //pressEnterToContinue();
-            });
-
+            Map<String, Object> galParams = new HashMap<>();
+            galParams.put("gallery", gal);
+            galParams.put("startFrom", fname);
+            UIView gw = uiManager.buildFromFactory("GalleryViewer", galParams, true);
             logger.info("Initialization complete");
             gw.show();
         } else {
@@ -382,18 +367,9 @@ public class HLibrary extends Application
 
             gal.addImages(dbInterface.getImages());
 
-            //TODO
-            GalleryViewer gw = new GalleryViewer(dbInterface.getActiveDatabase());
-            gw.setGallery(gal);
-            gw.setOnCloseRequest(event -> {
-            	if(!dbInterface.saveDatabase()) {
-                	//TODO saving failed, prompt!
-                }
-                logger.info("Closing application");
-                Platform.exit();
-                //pressEnterToContinue();
-            });
-
+            Map<String, Object> galParams = new HashMap<>();
+            galParams.put("gallery", gal);
+            UIView gw = uiManager.buildFromFactory("GalleryViewer", galParams, true);
             logger.info("Initialization complete");
             gw.show();
         }
@@ -428,17 +404,24 @@ public class HLibrary extends Application
 
         //db.computeSimilarityStrings();
 
-        //TODO
-        fviewer = new FolderViewer(dbInterface.getActiveDatabase(), Properties.get("galroot"));
-        fviewer.setOnCloseRequest(event -> {
-            if(!dbInterface.saveDatabase()) {
-            	//TODO saving failed, prompt!
-            }
-            logger.info("Closing application");
-            Platform.exit();
-        });
+        UIView fviewer = uiManager.buildFromFactory("FolderViewer", true);
         logger.info("Initialization complete");
         fviewer.show();
+    }
+    
+    public void saveAndExit(boolean waitForEnter) {
+    	if(!dbInterface.saveDatabase()) {
+        	//TODO saving failed, prompt!
+        }
+        logger.info("Closing application");
+        Platform.exit();
+        if(waitForEnter)
+        	pressEnterToContinue();
+    }
+    
+    public static boolean criticalCloseRequested() {
+    	instance.saveAndExit(false);
+    	return true;
     }
     
     public static void changeConsoleFocus(HConsoleStage stage, boolean inFocus)
@@ -455,6 +438,10 @@ public class HLibrary extends Application
     {
         HConsoleViewer v = new HConsoleViewer(instance.console, parent);
         v.show();
+    }
+    
+    public static UIManager getUIManager() {
+    	return instance.uiManager;
     }
     
     private static void pressEnterToContinue()

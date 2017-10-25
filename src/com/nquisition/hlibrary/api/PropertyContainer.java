@@ -1,6 +1,6 @@
-package com.nquisition.hlibrary.model;
+package com.nquisition.hlibrary.api;
 
-public interface IPropertyContainer {
+public interface PropertyContainer {
 	void setProperty(String name, Object value);
 	Object getProperty(String name);
 	default int getPropInt(String name) {

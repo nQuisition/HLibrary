@@ -7,11 +7,13 @@ package com.nquisition.hlibrary.model;
 
 import java.util.*;
 
+import com.nquisition.hlibrary.api.PropertyContainer;
+
 /**
  *
  * @author Master
  */
-public class GEntry implements IPropertyContainer
+public class GEntry implements PropertyContainer
 {
     private String comment = null;
     private List<String> tags;

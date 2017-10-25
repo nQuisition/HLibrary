@@ -319,6 +319,11 @@ public class DatabaseInterface
     	}
 	}
 	
+	//TODO belongs here?
+	public void checkVerticality(double tV, double tH, boolean nameOnly) {
+		activeDatabase.checkVerticality(tV, tH, nameOnly);
+	}
+	
 	public static boolean convert(String inFile, String outFile) {
 		File f = new File(inFile);
         if(!(f.exists() && f.isFile()))
