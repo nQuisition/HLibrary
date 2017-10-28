@@ -1,4 +1,4 @@
-package com.nquisition.hlibrary.ui;
+package com.nquisition.hlibrary.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,9 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.nquisition.hlibrary.HLibrary;
-import com.nquisition.hlibrary.api.ExtendableGUIElement;
-import com.nquisition.hlibrary.api.ExtendableGUIFactory;
-import com.nquisition.hlibrary.api.UIView;
 
 public abstract class UIManager {
 	private Map<String, ExtendableGUIFactory> factories = new HashMap<>();
@@ -24,6 +21,7 @@ public abstract class UIManager {
 	
 	public boolean registerUIFactory(String name, ExtendableGUIFactory factory) {
 		//TODO maybe don't return false when this fails, insted change name and return it?
+		System.out.println(factory.getClass());
 		if(factories.containsKey(name))
 			return false;
 		factories.put(name, factory);

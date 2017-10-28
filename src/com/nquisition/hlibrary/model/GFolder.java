@@ -8,6 +8,8 @@ package com.nquisition.hlibrary.model;
 import com.nquisition.util.FileUtils;
 import com.nquisition.hlibrary.util.CreationTimeGFolderComparator;
 import com.nquisition.hlibrary.Utils;
+import com.nquisition.hlibrary.api.IGFolder;
+
 import java.util.*;
 import java.io.*;
 
@@ -15,7 +17,7 @@ import java.io.*;
  *
  * @author Master
  */
-public class GFolder extends GEntry
+public class GFolder extends GEntry implements IGFolder
 {
     private String path;
     private String alias;
@@ -23,7 +25,8 @@ public class GFolder extends GEntry
     private List<GImage> images;
     private List<GFolder> subfolders;
     
-    public String toString()
+    @Override
+	public String toString()
     {
         return path;
     }
@@ -71,7 +74,8 @@ public class GFolder extends GEntry
     		folder.nullifyEmptyStrings();
     }
     
-    public int getRating()
+    @Override
+	public int getRating()
     {
         //TODO ............
         if(this.hasTag("0"))
@@ -106,7 +110,8 @@ public class GFolder extends GEntry
         return null;
     }
     
-    public int getNumImages()
+    @Override
+	public int getNumImages()
     {
     	return images.size();
     }
@@ -128,12 +133,14 @@ public class GFolder extends GEntry
         return res;
     }
     
-    public String getAlias()
+    @Override
+	public String getAlias()
     {
         return alias;
     }
     
-    public String getPath()
+    @Override
+	public String getPath()
     {
         return path;
     }
@@ -143,9 +150,10 @@ public class GFolder extends GEntry
         return parent;
     }
     
-    public List<GImage> getImages()
+    @Override
+	public List<GImage> getImages()
     {
-        return images;
+        return new ArrayList<>(images);
     }
     
     public void getAllImages(List<GImage> list)

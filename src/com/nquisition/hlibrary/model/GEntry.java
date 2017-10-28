@@ -7,13 +7,13 @@ package com.nquisition.hlibrary.model;
 
 import java.util.*;
 
-import com.nquisition.hlibrary.api.PropertyContainer;
+import com.nquisition.hlibrary.api.IGEntry;
 
 /**
  *
  * @author Master
  */
-public class GEntry implements PropertyContainer
+public class GEntry implements IGEntry
 {
     private String comment = null;
     private List<String> tags;
@@ -126,6 +126,10 @@ public class GEntry implements PropertyContainer
         sortTags();
     }
     
+    public void addTag(String t) {
+        addTag(t, true);
+    }
+    
     public void addTag(String t, boolean check)
     {
         if(check && this.hasTag(t)) {
@@ -173,7 +177,7 @@ public class GEntry implements PropertyContainer
     
     public List<String> getTags()
     {
-        return tags;
+        return new ArrayList<>(tags);
     }
     
     public void sortTags()

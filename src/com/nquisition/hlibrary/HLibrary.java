@@ -10,6 +10,8 @@ import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.DatabaseInterface;
 import com.nquisition.hlibrary.model.GFolder;
 import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.api.BasePlugin;
+import com.nquisition.hlibrary.api.UIManager;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.console.HConsole;
 import com.nquisition.hlibrary.console.HConsoleAppender;
@@ -18,10 +20,11 @@ import com.nquisition.hlibrary.ui.DefaultUIManager;
 import com.nquisition.hlibrary.ui.HConsoleStage;
 import com.nquisition.hlibrary.ui.HConsoleViewer;
 import com.nquisition.hlibrary.ui.SimilarityViewer;
-import com.nquisition.hlibrary.ui.UIManager;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import simpleserver.ListenerPlugin;
+
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -51,6 +54,8 @@ public class HLibrary extends Application
     private UIManager uiManager;
     private HConsole console;
     private List<String> params = null;
+    
+    private List<BasePlugin> plugins;
     
     static
     {
@@ -101,6 +106,15 @@ public class HLibrary extends Application
         uiManager = new DefaultUIManager();
         uiManager.constructDefaults(uiParams);
         
+        plugins = new ArrayList<>();
+        loadPlugins();
+        
+        for(BasePlugin plugin : plugins) {
+        	plugin.setDatabaseInterface(dbInterface);
+        	plugin.setUIManager(uiManager);
+        	plugin.init();
+        }
+        
         if(!params.isEmpty() && params.get(0).equals("-v")) {
             this.startLocal();
         } else if(!params.isEmpty() && params.get(0).equals("-test")) {
@@ -109,6 +123,11 @@ public class HLibrary extends Application
         	//TODO remove
             this.startGlobal();
         }
+        
+        //TODO this has to be in between loading DB and displaying UI
+        for(BasePlugin plugin : plugins)
+        	plugin.start();
+        
         //FIXME REMOVE!
         /*else if(params.size() > 0 && params.get(0).equals("-fix2")) {
         	db = new Database(true);
@@ -410,13 +429,23 @@ public class HLibrary extends Application
     }
     
     public void saveAndExit(boolean waitForEnter) {
+    	for(BasePlugin plugin : plugins)
+    		plugin.stop();
     	if(!dbInterface.saveDatabase()) {
         	//TODO saving failed, prompt!
         }
         logger.info("Closing application");
+        for(BasePlugin plugin : plugins)
+        	plugin.dispose();
         Platform.exit();
         if(waitForEnter)
         	pressEnterToContinue();
+    }
+    
+    public void loadPlugins() {
+    	BasePlugin listenerPlugin = new ListenerPlugin();
+    	
+    	//plugins.add(listenerPlugin);
     }
     
     public static boolean criticalCloseRequested() {

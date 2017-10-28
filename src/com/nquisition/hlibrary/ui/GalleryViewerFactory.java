@@ -83,8 +83,8 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 		for(Entry<String, List<Node>> entry : this.getElementSet()) {
 			gw.addElements(entry.getKey(), entry.getValue().toArray(new Node[entry.getValue().size()]));
 		}
-		gw.setGallery(gal);
 		gw.constructGUI();
+		gw.setGallery(gal, startFrom);
 		return gw;
 	}
 	

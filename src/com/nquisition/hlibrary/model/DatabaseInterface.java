@@ -17,8 +17,9 @@ import org.apache.logging.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
+import com.nquisition.hlibrary.api.IDatabaseInterface;
 
-public class DatabaseInterface
+public class DatabaseInterface implements IDatabaseInterface
 {
 	private static final Logger logger = LogManager.getLogger(DatabaseInterface.class);
 	private Database activeDatabase;

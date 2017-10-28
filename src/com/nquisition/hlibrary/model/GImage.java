@@ -20,13 +20,14 @@ import java.awt.*;
 import java.awt.geom.*;
 import uk.co.jaimon.test.SimpleImageInfo;
 import com.idrsolutions.image.png.*;
+import com.nquisition.hlibrary.api.IGImage;
 import com.nquisition.util.FileUtils;
 
 /**
  *
  * @author Master
  */
-public class GImage extends GEntry
+public class GImage extends GEntry implements IGImage
 {
     private static int NEXTID = 0;
     private int id;

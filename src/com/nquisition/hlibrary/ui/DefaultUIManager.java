@@ -2,6 +2,7 @@ package com.nquisition.hlibrary.ui;
 
 import java.util.Map;
 
+import com.nquisition.hlibrary.api.UIManager;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.DatabaseInterface;
 
