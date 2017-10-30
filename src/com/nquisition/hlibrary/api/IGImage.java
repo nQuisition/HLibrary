@@ -7,6 +7,6 @@ public interface IGImage extends IGEntry {
 	String getFullPath();
 	//TODO need getParent?
 	boolean isOnTopLevel();
-	boolean computeSimilarity() throws IOException;
+	boolean computeSimilarity(boolean forceRecompute) throws IOException;
 	//TODO need something like getSimilarityBytes
 }

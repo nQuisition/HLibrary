@@ -8,6 +8,8 @@ import java.util.Map.Entry;
 
 import com.nquisition.hlibrary.HLibrary;
 
+import javafx.scene.Node;
+
 public abstract class UIManager {
 	private Map<String, ExtendableGUIFactory> factories = new HashMap<>();
 	private Map<String, List<UIView>> elements = new HashMap<>();
@@ -21,7 +23,6 @@ public abstract class UIManager {
 	
 	public boolean registerUIFactory(String name, ExtendableGUIFactory factory) {
 		//TODO maybe don't return false when this fails, insted change name and return it?
-		System.out.println(factory.getClass());
 		if(factories.containsKey(name))
 			return false;
 		factories.put(name, factory);
@@ -30,6 +31,13 @@ public abstract class UIManager {
 	
 	public ExtendableGUIFactory getFactory(String name) {
 		return factories.get(name);
+	}
+	
+	public boolean registerExtension(String elementName, String pos, Node... extensions) {
+		if(!factories.containsKey(elementName))
+			return false;
+		factories.get(elementName).registerElements(pos, extensions);
+		return true;
 	}
 	
 	public UIView buildFromFactory(String name, boolean critical) {
@@ -70,7 +78,7 @@ public abstract class UIManager {
 			return false;
 		List<UIView> list = elements.get(name);
 		list.remove(element);
-		if(list.size() <= 0)
+		if(list.isEmpty())
 			elements.remove(name);
 		reverseElements.remove(element);
 		criticalElements.remove(element);

@@ -11,14 +11,17 @@ import com.nquisition.hlibrary.model.DatabaseInterface;
 import com.nquisition.hlibrary.model.GFolder;
 import com.nquisition.hlibrary.model.GImage;
 import com.nquisition.hlibrary.api.BasePlugin;
+import com.nquisition.hlibrary.api.ProgressMonitor;
 import com.nquisition.hlibrary.api.UIManager;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.console.HConsole;
 import com.nquisition.hlibrary.console.HConsoleAppender;
 import com.nquisition.hlibrary.console.IConsoleListener;
+import com.nquisition.hlibrary.exh.EXHPlugin;
 import com.nquisition.hlibrary.ui.DefaultUIManager;
 import com.nquisition.hlibrary.ui.HConsoleStage;
 import com.nquisition.hlibrary.ui.HConsoleViewer;
+import com.nquisition.hlibrary.ui.HProgressManager;
 import com.nquisition.hlibrary.ui.SimilarityViewer;
 
 import javafx.application.Application;
@@ -27,7 +30,11 @@ import simpleserver.ListenerPlugin;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 import javafx.application.Platform;
 
@@ -52,6 +59,7 @@ public class HLibrary extends Application
     
     private DatabaseInterface dbInterface;
     private UIManager uiManager;
+    private HProgressManager progressManager;
     private HConsole console;
     private List<String> params = null;
     
@@ -98,6 +106,8 @@ public class HLibrary extends Application
             System.out.println(p);*/
         
         dbInterface = new DatabaseInterface(null);
+        progressManager = new HProgressManager();
+        progressManager.show();
         
         //TODO putting dbinterface into uimanager before database is loaded - is it OK?
         Map<String, Object> uiParams = new HashMap<>();
@@ -127,6 +137,28 @@ public class HLibrary extends Application
         //TODO this has to be in between loading DB and displaying UI
         for(BasePlugin plugin : plugins)
         	plugin.start();
+        
+        int count = 0;
+        for(GImage img : dbInterface.getImages())
+        	if(img.getSimilarityString() != null)
+        		count++;
+        System.out.println(count + "/" + dbInterface.getImages().size());
+        
+        //TODO need something like this for TaskManager
+        ExecutorService es = Executors.newSingleThreadExecutor ();
+        es.submit(dbInterface.computeSimilarityStrings());
+        Future<Map<GImage, List<GImage>>> similars = es.submit(dbInterface.findSimilarImages(1000));
+        es.submit(() -> {
+        	try {
+        		Map<GImage, List<GImage>> map = similars.get();
+        		Platform.runLater(() -> {
+        			SimilarityViewer sw = new SimilarityViewer(dbInterface.getActiveDatabase(), map);
+        			sw.show();
+        		});
+        	} catch (Exception e) {
+				e.printStackTrace();
+			}
+        });
         
         //FIXME REMOVE!
         /*else if(params.size() > 0 && params.get(0).equals("-fix2")) {
@@ -444,13 +476,20 @@ public class HLibrary extends Application
     
     public void loadPlugins() {
     	BasePlugin listenerPlugin = new ListenerPlugin();
-    	
     	//plugins.add(listenerPlugin);
+    	
+    	BasePlugin exhPlugin = new EXHPlugin();
+    	plugins.add(exhPlugin);
     }
     
     public static boolean criticalCloseRequested() {
     	instance.saveAndExit(false);
     	return true;
+    }
+    
+    //TODO
+    public static ProgressMonitor requestProgressMonitor(String taskName) {
+    	return instance.progressManager.requestProgressMonitor(taskName);
     }
     
     public static void changeConsoleFocus(HConsoleStage stage, boolean inFocus)

@@ -1,4 +1,4 @@
-package com.nquisition.hlibrary.ui;
+package com.nquisition.hlibrary.api;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import com.nquisition.hlibrary.api.ExtendableGUIFactory;
 
 import javafx.scene.Node;
 

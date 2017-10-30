@@ -9,7 +9,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +21,10 @@ import org.apache.logging.log4j.Logger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
+import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.api.IDatabaseInterface;
+import com.nquisition.hlibrary.api.ProgressManager;
+import com.nquisition.hlibrary.api.ProgressMonitor;
 
 public class DatabaseInterface implements IDatabaseInterface
 {
@@ -103,10 +110,12 @@ public class DatabaseInterface implements IDatabaseInterface
         return true;
 	}
 	
+	@Override
 	public List<GFolder> getFolders() {
 		return new ArrayList<>(activeDatabase.getFolders());
 	}
 	
+	@Override
 	public List<GImage> getImages() {
 		return new ArrayList<>(activeDatabase.getImages());
 	}
@@ -115,8 +124,80 @@ public class DatabaseInterface implements IDatabaseInterface
 		activeDatabase.info();
 	}
 	
+	@Override
 	public boolean addDirectory(String path, int depth) {
 		return activeDatabase.addDirectory(path, depth) >= 0;
+	}
+	
+	//TODO memory leaks?
+	public Callable<Integer> computeSimilarityStrings() {
+		List<GImage> images = this.getImages(); 
+		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Computing similarity strings");
+		progressMonitor.start(images.size());
+		
+		//TODO use javafx tasks?
+		return () -> {
+			images.stream().parallel().forEach(img -> {
+	        	//img.setSimilarityBytes(null);
+	        	progressMonitor.add(1);
+	        	try {
+					img.computeSimilarity(false);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+	        });
+			return 1;
+		};
+		
+		/*new Thread() {
+			@Override
+			public void run() {
+				images.stream().parallel().forEach((img) -> {
+		        	//img.setSimilarityBytes(null);
+		        	progressMonitor.add(1);
+		        	int res = count.addAndGet(1);
+		        	if(res % 10 == 0)
+		        		System.out.println(res + "/" + images.size());
+		        	try {
+						img.computeSimilarity(false);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+		        });
+			}
+		}.start();*/
+	}
+	
+	//TODO memory leaks?
+	//TODO compute similarity or leave like this?
+	//Assumes similarity is computed; skips images without similarity info
+	public Callable<Map<GImage, List<GImage>>> findSimilarImages(int threshold) {
+		List<GImage> images = this.getImages();
+		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Finding similar images");
+		progressMonitor.start(images.size());
+		
+		//TODO detect sketches and ignore them
+		return () -> {
+			Map<GImage, List<GImage>> res = new HashMap<>();
+			images.stream().parallel().forEach(img -> {
+				progressMonitor.add(1);
+	            for(int j = 0; j < images.size(); j++) {
+	            	GImage image2 = images.get(j);
+	            	
+	            	if(img == image2)
+	            		continue;
+	                int diff = img.differenceFrom(images.get(j), threshold, false);
+	                if(diff < threshold && diff >= 0) {
+	                    if(img.getParent() != images.get(j).getParent() || diff == 0) {
+	                    	if(!res.containsKey(img))
+	                    		res.put(img, new ArrayList<>());
+	                    	res.get(img).add(images.get(j));
+	                    }
+	                }
+	            }
+	        });
+			return res;
+		};
 	}
 	
 	public boolean readDatabaseFromJson(String fileName, boolean local)

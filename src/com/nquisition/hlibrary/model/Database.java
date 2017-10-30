@@ -658,7 +658,7 @@ public class Database
         		continue;
         	}
             System.out.print(i+1 + "/" + images.size() + " - ");
-            if(!images.get(i).computeSimilarity())
+            if(!images.get(i).computeSimilarity(false))
                 bw.write("Problem loading file " + images.get(i).getFullPath() + "\n");
             images.get(i).computeWhiteness();
             //else

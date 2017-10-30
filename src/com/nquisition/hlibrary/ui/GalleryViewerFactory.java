@@ -15,6 +15,7 @@ import com.nquisition.fxutil.FXFactory;
 import com.nquisition.fxutil.MultiColoredText;
 import com.nquisition.fxutil.RatingBar;
 import com.nquisition.hlibrary.HLibrary;
+import com.nquisition.hlibrary.api.AbstractGUIFactory;
 import com.nquisition.hlibrary.api.ExtendableGUIElement;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.fxutil.HFXFactory;

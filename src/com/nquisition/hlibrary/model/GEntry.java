@@ -6,6 +6,7 @@
 package com.nquisition.hlibrary.model;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import com.nquisition.hlibrary.api.IGEntry;
 
@@ -24,10 +25,12 @@ public class GEntry implements IGEntry
     
     private Map<String, Object> customProps = new HashMap<>();
     
+    //TODO maybe rename this one?
     public void nullifyEmptyStrings()
     {
     	if(comment != null && (comment.equals("") || comment.equals("null")))
     		comment = null;
+    	customProps.entrySet().removeIf(entry -> entry.getValue() == null);
     }
     
     public long getAdded()

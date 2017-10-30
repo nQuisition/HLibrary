@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.nquisition.hlibrary.HLibrary;
+import com.nquisition.hlibrary.api.AbstractGUIFactory;
 import com.nquisition.hlibrary.api.ExtendableGUIElement;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.fxutil.HFXFactory;
@@ -48,12 +49,14 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	private static final Logger logger_local = LogManager.getLogger(FolderViewer.class.getName()+".local");
     private static final Logger logger_global = LogManager.getLogger(FolderViewer.class.getName()+".global");
     
+    //FIXME make constructor and pass those properties in it?
 	@Override
 	public FolderViewer build() {
 		DatabaseInterface databaseInterface = (DatabaseInterface)this.getProperty("dbInterface");
 		String root = this.getPropString("root");
 		FolderViewer fw = new FolderViewer(databaseInterface, root);
 		for(Entry<String, List<Node>> entry : this.getElementSet()) {
+			System.out.println("Adding to " + entry.getKey());
 			fw.addElements(entry.getKey(), entry.getValue().toArray(new Node[entry.getValue().size()]));
 		}
 		fw.constructGUI();
@@ -117,9 +120,9 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        list1.setEditable(false);
 	        
 	        Button thumbsButton = new Button("Thumbs");
-	        thumbsButton.setOnAction((ActionEvent e) -> viewAddThumbs() );
+	        thumbsButton.setOnAction( e -> viewAddThumbs() );
 	        Button viewAddButton = new Button("Go");
-	        viewAddButton.setOnAction((ActionEvent e) -> viewAddFolders() );
+	        viewAddButton.setOnAction( e -> viewAddFolders() );
 	        
 	        thumbsButton.setMaxWidth(Double.MAX_VALUE);
 	        viewAddButton.setMaxWidth(Double.MAX_VALUE);
@@ -137,13 +140,13 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	         *----------------------------------------------------------*/
 	        tagInput = new TextField();
 	        Button viewTaggedButton = HFXFactory.createUnboundedButton("Go");
-	        viewTaggedButton.setOnAction((ActionEvent e) -> viewTaggedGallery() );
+	        viewTaggedButton.setOnAction( e -> viewTaggedGallery() );
 	        
 	        Button viewLinkedButton = HFXFactory.createUnboundedButton("Linked");
-	        viewLinkedButton.setOnAction((ActionEvent e) -> showLinked() );
+	        viewLinkedButton.setOnAction( e -> showLinked() );
 	        
 	        Button viewLocalButton = HFXFactory.createUnboundedButton("Local DBs");
-	        viewLocalButton.setOnAction((ActionEvent e) -> {
+	        viewLocalButton.setOnAction( e -> {
 	            LocalDatabaseViewer v = new LocalDatabaseViewer(root);
 	            v.show();
 	        });

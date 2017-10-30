@@ -334,11 +334,15 @@ public class GImage extends GEntry implements IGImage
         return Math.min(res, Math.min(res1, res2));
     }
     
-    public boolean computeSimilarity() throws IOException
+    @Override
+	public boolean computeSimilarity(boolean forceRecompute) throws IOException
     {
     	if((similarityBytes == null || similarityBytes.length != RESOLUTION*RESOLUTION) && similarityString != null) {
     		return similarityFromString(similarityString);
     	}
+    	if(!forceRecompute && similarityBytes != null && similarityBytes.length == RESOLUTION*RESOLUTION)
+    		return true;
+    	
         try
         {
             similarityBytes = new byte[RESOLUTION*RESOLUTION];
@@ -375,6 +379,7 @@ public class GImage extends GEntry implements IGImage
     	similarityString = "";
     	for(int i = 0; i < similarityBytes.length; i++)
     		bld.append((char)(similarityBytes[i]));
+    	similarityString = bld.toString();
     }
     
     public boolean similarityFromString(String similarity) {
@@ -389,6 +394,10 @@ public class GImage extends GEntry implements IGImage
     		similarityBytes[i] = (byte)(similarity.charAt(i));
     	}
     	return true;
+    }
+    
+    public String getSimilarityString() {
+    	return similarityString;
     }
     
     public void computeWhiteness() {
@@ -448,7 +457,7 @@ public class GImage extends GEntry implements IGImage
     
     public Image getSimilarityImage(int width, int height) throws IOException {
     	if(similarityBytes == null || similarityBytes.length != RESOLUTION*RESOLUTION)
-    		this.computeSimilarity();
+    		this.computeSimilarity(true);
     	BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
     	
     	// Get the backing pixels, and copy into it
