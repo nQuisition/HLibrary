@@ -555,7 +555,7 @@ public class Gallery
     
     public int getCurrentRating()
     {
-    	if(curimg < 0 || images.size() <= 0)
+    	if(curimg < 0 || images.size() <= 0 || images.get(curimg).getParent() == null)
             return -1;
     	return images.get(curimg).getParent().getRating();
     }

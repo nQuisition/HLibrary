@@ -71,7 +71,7 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	    private DatabaseInterface dbInterface;
 	    private String root;
 	    
-	    private ListView<String> list1;
+	    private ListView<FolderEntry> list1;
 	    private TextField tagInput;
 	    
 	    private List<Button> topButtons = new ArrayList<>();
@@ -81,7 +81,27 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	    private boolean groupOrientations = false;
 	    private boolean forceDisplayWholeList = true;
 	    
-	    private static final String PREFIX = "[*!!!%%%!!!%%%!!!*]";
+	    private static class FolderEntry {
+	    	private String path;
+	    	private GFolder folder;
+	    	
+	    	public FolderEntry(String path, GFolder folder) {
+	    		this.path = path;
+	    		this.folder = folder;
+	    	}
+	    	
+	    	public String getPath() {
+	    		return path;
+	    	}
+	    	
+	    	public GFolder getFolder() {
+	    		return folder;
+	    	}
+	    	
+	    	public void setFolder(GFolder folder) {
+	    		this.folder = folder;
+	    	}
+	    }
 	       
 	    public FolderViewer(DatabaseInterface dbInterface, String root)
 	    {
@@ -109,7 +129,7 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 
 		@Override
 		public void constructGUI() {
-			ObservableList<String> data1 = FXCollections.observableArrayList();
+			ObservableList<FolderEntry> data1 = FXCollections.observableArrayList();
 	        
 	        /*----------------------------------------------------------
 	         * Viewing/adding folders
@@ -163,32 +183,46 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        
 	        VBox wrapper = new VBox(viewAddBox, viewGalleryBox);
 	        
-	        ArrayList<String> folders = this.getFolders();
+	        List<FolderEntry> folders = this.getFolders();
 	        for(int i = 0; i < folders.size(); i++)
 	            data1.add(folders.get(i));
 	        
 	        
 	        list1.setCellFactory(list -> {
-	            // usual list cell:
-	            ListCell<String> cell = new ListCell<String>() {
+	            ListCell<FolderEntry> cell = new ListCell<FolderEntry>() {
 	                @Override
-	                protected void updateItem(String item, boolean empty) {
+	                protected void updateItem(FolderEntry item, boolean empty) {
 	                    super.updateItem(item, empty);
-	                    setText(empty ? "" : item);
+	                    if(item != null) {
+	                    	setText(empty ? "" : item.getPath());
+	                    	
+	                    	//TODO a lot of unnecessary updates?
+	                    	if(item.getFolder() != null) {
+	                    		setStyle("-fx-text-fill:red; -fx-font-weight:bold;");
+	                    	} else {
+	                    		setStyle("");
+	                    	}
+	                    } else {
+	                    	setText("");
+	                    }
 	                }
 	            };
 	            
-	            BooleanBinding invalid = Bindings.createBooleanBinding(
-	                    () -> checkFolderName(cell.getText()), cell.textProperty(), cell.itemProperty());
+	            /*BooleanBinding invalid = Bindings.createBooleanBinding(
+	                    () -> cell.getItem() != null && cell.getItem().getFolder() != null, 
+	                    cell.textProperty(), cell.itemProperty());
 
 	            invalid.addListener((obs, wasInvalid, isNowInvalid) -> {
-	                if (!wasInvalid && isNowInvalid) {
+	            	if(cell.getItem() != null) {
+	            		logger.warn(isNowInvalid + " :: " + cell.getItem().getPath() + " :: " + cell.getItem().getFolder());
+	            	}
+	                if (isNowInvalid) {
 	                    cell.setStyle("-fx-text-fill:red;");
 	                } else {
 	                    cell.setStyle("");
 	                }
-	            });
-
+	            });*/
+	            	
 	            return cell;
 	        });
 
@@ -212,34 +246,17 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 			return AVAILABLE_POSITIONS;
 		}
 	    
-	    private static boolean checkFolderName(String txt)
-	    {
-	        if(txt == null)
-	            return false;
-	        return txt.startsWith(PREFIX);
-	    }
-	    
-	    public void viewAddFolders()
-	    {
-	        ArrayList<String> folders = new ArrayList<>();
-	        for(String str : list1.getSelectionModel().getSelectedItems())
-	        {
-	            folders.add(str);
+	    public void viewAddFolders() {
+	        List<FolderEntry> folders = new ArrayList<>();
+	        for(FolderEntry entry : list1.getSelectionModel().getSelectedItems()) {
+	            folders.add(entry);
 	        }
 	        
-	        for(int i = 0; i < folders.size(); i++)
-	        {
-	            if(!folders.get(i).startsWith(PREFIX))
-	            {
-	                if(!dbInterface.addDirectory(root + folders.get(i), 1))
-	                {
-	                    logger.warn("Failed to add directory/subdirectories to the database");
-	                }
-	            }
-	            else
-	            {
-	                folders.set(i, folders.get(i).substring(PREFIX.length()));
-	            }
+	        for(int i = 0; i < folders.size(); i++) {
+	            if(folders.get(i).getFolder() == null 
+	            		&& !dbInterface.addDirectory(root + folders.get(i).getPath(), 1)) {
+                    logger.warn("Failed to add directory/subdirectories to the database");
+                }
 	        }
 	        dbInterface.checkVerticality(1.0, 1.0, true);
 
@@ -247,13 +264,14 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        Gallery gal = new Gallery(dbInterface.getActiveDatabase());
 	        ArrayList<GImage> end = new ArrayList<>();
 	        ArrayList<GImage> start = new ArrayList<>();
-	        for(String f : folders)
+	        for(FolderEntry f : folders)
 	        {
 	            ArrayList<GImage> imgs = new ArrayList<>();
 	            //TODO
-	            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolder(root + f + "\\");
+	            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolder(root + f.getPath() + "\\");
 	            if(gfolder == null)
 	                continue;
+	            f.setFolder(gfolder);
 	            gfolder.getAllImages(imgs);
 	            for(GImage img : imgs)
 	            {
@@ -269,8 +287,9 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        }
 	        for(GImage img : end)
 	            start.add(img);
-	        end = null;
 	        gal.addImages(start);
+	        
+	        list1.refresh();
 
 	        Map<String, Object> galParams = new HashMap<>();
             galParams.put("gallery", gal);
@@ -280,37 +299,32 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        //TODO Reset list1, since there will be more folders with PREFIX
 	    }
 	    
-	    public void viewAddThumbs()
-	    {
-	        ArrayList<String> folders = new ArrayList<String>();
-	        for(String str : list1.getSelectionModel().getSelectedItems())
-	        {
-	            folders.add(str);
+	    public void viewAddThumbs() {
+	        List<FolderEntry> folders = new ArrayList<>();
+	        for(FolderEntry entry : list1.getSelectionModel().getSelectedItems()) {
+	            folders.add(entry);
 	        }
 	        
 	        for(int i = 0; i < folders.size(); i++)
 	        {
-	            if(!folders.get(i).startsWith(PREFIX))
-	            {
-	                if(!dbInterface.addDirectory(root + folders.get(i), 1))
-	                {
-	                    logger.warn("Failed to add directory/subdirectories to the database");
-	                }
-	            }
-	            else
-	                folders.set(i, folders.get(i).substring(PREFIX.length()));
+	        	if(folders.get(i).getFolder() == null 
+	            		&& !dbInterface.addDirectory(root + folders.get(i).getPath(), 1)) {
+                    logger.warn("Failed to add directory/subdirectories to the database");
+                }
 	        }
 	        dbInterface.checkVerticality(1.0, 1.0, true);
 
 	        ArrayList<GFolder> start = new ArrayList<>();
-	        for(String f : folders)
+	        for(FolderEntry f : folders)
 	        {
 	        	//TODO
-	            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolder(root + f + "\\");
+	            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolder(root + f.getPath() + "\\");
+	            f.setFolder(gfolder);
 	            if(gfolder != null)
 	                start.add(gfolder);
 	        }
 
+	        list1.refresh();
 	        //TODO
 	        ThumbViewer tv = new ThumbViewer(dbInterface.getActiveDatabase(), start);
 	        tv.show();
@@ -507,35 +521,22 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        return res;
 	    }
 	    
-	    public ArrayList<String> getFolders()
+	    public List<FolderEntry> getFolders()
 	    {
-	        ArrayList<String> res = new ArrayList<>();
+	        List<FolderEntry> res = new ArrayList<>();
 	        File p = new File(root);
 	        if(!p.exists() || !p.isDirectory())
-	            return null;
+	            return new ArrayList<>();
 	        File[] listOfFiles = p.listFiles();
-	        /*Arrays.sort(listOfFiles, new Comparator<File>(){
-	            public int compare(File f1, File f2)
-	            {
-	                return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
-	            } });*/
 	        Arrays.sort(listOfFiles, new CreationTimeFileComparator());
 	        for(int i = 0; i < listOfFiles.length; i++)
 	        {
 	            if(!listOfFiles[i].isDirectory())
 	                continue;
-	            try
-	            {
-	            	//TODO
-	                if(dbInterface.getActiveDatabase().folderAlreadyAdded(listOfFiles[i].getCanonicalPath() + "\\"))
-	                    res.add(PREFIX + listOfFiles[i].getName());
-	                else
-	                    res.add(listOfFiles[i].getName());
-	            }
-	            catch(IOException e)
-	            {
-	                e.printStackTrace();
-	            }
+
+            	//TODO
+	            GFolder folder = dbInterface.getActiveDatabase().getFolderByName(listOfFiles[i].getAbsolutePath() + "\\");
+                res.add(new FolderEntry(listOfFiles[i].getName(), folder));
 	        }
 	        
 	        return res;

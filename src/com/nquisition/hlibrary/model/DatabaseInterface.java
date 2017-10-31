@@ -395,10 +395,20 @@ public class DatabaseInterface implements IDatabaseInterface
 			reader.endArray();
 			entry.setTags(tags, false);
 		}
-		else
-		{
-    	   reader.skipValue();
-    	}
+		else if(fieldName.equals("customProps")) {
+			processCustomProps(entry, reader);
+		} else {
+			reader.skipValue();
+		}
+	}
+	
+	public static void processCustomProps(GEntry entry, JsonReader reader) throws IOException {
+		reader.beginObject();
+		while(reader.hasNext()) {
+			String fieldName = reader.nextName();
+			HLibrary.getPropManager().readPropertyFromJson(entry, fieldName, reader);
+		}
+		reader.endObject();
 	}
 	
 	//TODO belongs here?

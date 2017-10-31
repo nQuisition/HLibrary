@@ -33,22 +33,26 @@ public class GEntry implements IGEntry
     	customProps.entrySet().removeIf(entry -> entry.getValue() == null);
     }
     
-    public long getAdded()
+    @Override
+	public long getAdded()
     {
         return added;
     }
     
-    public long getLastmod()
+    @Override
+	public long getLastmod()
     {
         return lastmod;
     }
     
-    public long getViewed()
+    @Override
+	public long getViewed()
     {
         return viewed;
     }
     
-    public int getViewcount()
+    @Override
+	public int getViewcount()
     {
         return viewcount;
     }
@@ -66,7 +70,8 @@ public class GEntry implements IGEntry
             added = a;
     }
     
-    public void setLastmodNow()
+    @Override
+	public void setLastmodNow()
     {
         setLastmod(-1);
     }
@@ -107,7 +112,8 @@ public class GEntry implements IGEntry
         comment = c;
     }
     
-    public String getComment()
+    @Override
+	public String getComment()
     {
         return comment;
     }
@@ -129,7 +135,8 @@ public class GEntry implements IGEntry
         sortTags();
     }
     
-    public void addTag(String t) {
+    @Override
+	public void addTag(String t) {
         addTag(t, true);
     }
     
@@ -154,7 +161,8 @@ public class GEntry implements IGEntry
         }
     }
     
-    public boolean hasTag(String t)
+    @Override
+	public boolean hasTag(String t)
     {
         for(String t1 : tags)
                 if(t.equalsIgnoreCase(t1))
@@ -162,7 +170,8 @@ public class GEntry implements IGEntry
         return false;
     }
     
-    public boolean hasAllTags(List<String> tgs)
+    @Override
+	public boolean hasAllTags(List<String> tgs)
     {
         for(String t : tgs)
             if(!this.hasTag(t))
@@ -170,7 +179,8 @@ public class GEntry implements IGEntry
         return true;
     }
     
-    public boolean hasNoTags(List<String> tgs)
+    @Override
+	public boolean hasNoTags(List<String> tgs)
     {
         for(String t : tgs)
             if(this.hasTag(t))

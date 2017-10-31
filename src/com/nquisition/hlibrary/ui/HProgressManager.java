@@ -1,7 +1,9 @@
 package com.nquisition.hlibrary.ui;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.nquisition.hlibrary.api.ProgressManager;
@@ -26,7 +28,7 @@ import javafx.util.Duration;
 public class HProgressManager extends Stage implements ProgressManager {
 	private static final int REFRESH_DELAY = 50;
 	
-	private List<MultiProgressMonitor> progressMonitors = new ArrayList<>();
+	private Map<MultiProgressMonitor, Node> progressMonitors = new HashMap<>();
 	private VBox container;
 	
 	public HProgressManager() {
@@ -42,13 +44,18 @@ public class HProgressManager extends Stage implements ProgressManager {
 	@Override
 	public ProgressMonitor requestProgressMonitor(String taskName) {
 		MultiProgressMonitor monitor = new MultiProgressMonitor(taskName);
-		progressMonitors.add(monitor);
-		container.getChildren().add(monitor.getUIElement());
+		Node element = monitor.getUIElement();
+		progressMonitors.put(monitor, element);
+		container.getChildren().add(element);
 		return monitor;
 	}
 	
 	public void monitorComplete(MultiProgressMonitor monitor) {
-		
+		Node element = progressMonitors.get(monitor);
+		if(element == null)
+			return;
+		container.getChildren().remove(element);
+		progressMonitors.remove(monitor);
 	}
 	
 	private class MultiProgressMonitor implements ProgressMonitor {

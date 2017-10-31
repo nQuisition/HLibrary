@@ -6,12 +6,16 @@
 package com.nquisition.hlibrary;
 
 import com.nquisition.hlibrary.model.Gallery;
+import com.nquisition.hlibrary.model.HCustomPropertiesManager;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.DatabaseInterface;
 import com.nquisition.hlibrary.model.GFolder;
 import com.nquisition.hlibrary.model.GImage;
+import com.google.gson.stream.JsonReader;
 import com.nquisition.hlibrary.api.BasePlugin;
+import com.nquisition.hlibrary.api.IGEntry;
 import com.nquisition.hlibrary.api.ProgressMonitor;
+import com.nquisition.hlibrary.api.PropertyProvider;
 import com.nquisition.hlibrary.api.UIManager;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.console.HConsole;
@@ -52,13 +56,14 @@ import org.apache.logging.log4j.ThreadContext;
  *
  * @author Master
  */
-public class HLibrary extends Application
+public class HLibrary extends Application implements PropertyProvider
 {
     private static final Logger logger = LogManager.getLogger(HLibrary.class);
     private static HLibrary instance;
     
     private DatabaseInterface dbInterface;
     private UIManager uiManager;
+    private HCustomPropertiesManager propertiesManager;
     private HProgressManager progressManager;
     private HConsole console;
     private List<String> params = null;
@@ -116,12 +121,15 @@ public class HLibrary extends Application
         uiManager = new DefaultUIManager();
         uiManager.constructDefaults(uiParams);
         
+        propertiesManager = new HCustomPropertiesManager();
+        
         plugins = new ArrayList<>();
         loadPlugins();
         
         for(BasePlugin plugin : plugins) {
         	plugin.setDatabaseInterface(dbInterface);
         	plugin.setUIManager(uiManager);
+        	plugin.setCustomPropertiesManager(propertiesManager);
         	plugin.init();
         }
         
@@ -145,7 +153,7 @@ public class HLibrary extends Application
         System.out.println(count + "/" + dbInterface.getImages().size());
         
         //TODO need something like this for TaskManager
-        ExecutorService es = Executors.newSingleThreadExecutor ();
+        /*ExecutorService es = Executors.newSingleThreadExecutor ();
         es.submit(dbInterface.computeSimilarityStrings());
         Future<Map<GImage, List<GImage>>> similars = es.submit(dbInterface.findSimilarImages(1000));
         es.submit(() -> {
@@ -158,7 +166,22 @@ public class HLibrary extends Application
         	} catch (Exception e) {
 				e.printStackTrace();
 			}
-        });
+        });*/
+        
+        /*File gifFolder = new File("D:\\temp1\\");
+        File[] list = gifFolder.listFiles();
+        List<GImage> gifs = new ArrayList<>();
+        for(File file : list) {
+        	if(file.isDirectory() || !file.getName().endsWith(".gif"))
+        		continue;
+        	gifs.add(new GImage(file.getAbsolutePath()));
+        }
+        Gallery gal = new Gallery(dbInterface.getActiveDatabase());
+        gal.addImages(gifs);
+        Map<String, Object> galParams = new HashMap<>();
+        galParams.put("gallery", gal);
+        UIView gw = HLibrary.getUIManager().buildFromFactory("GalleryViewer", galParams, false);
+        gw.show();*/
         
         //FIXME REMOVE!
         /*else if(params.size() > 0 && params.get(0).equals("-fix2")) {
@@ -512,6 +535,10 @@ public class HLibrary extends Application
     	return instance.uiManager;
     }
     
+    public static HCustomPropertiesManager getPropManager() {
+    	return instance.propertiesManager;
+    }
+    
     private static void pressEnterToContinue()
     { 
         System.out.println();
@@ -528,4 +555,24 @@ public class HLibrary extends Application
     {
     	launch(args);
     }
+
+	@Override
+	public String getName() {
+		return "HLibrary";
+	}
+
+	@Override
+	public String getIdentifier() {
+		return "";
+	}
+
+	@Override
+	public String[] getCustomProps() {
+		return new String[0];
+	}
+
+	@Override
+	public void readPropertyFromJson(IGEntry entry, String propName, JsonReader reader) {
+		
+	}
 }
