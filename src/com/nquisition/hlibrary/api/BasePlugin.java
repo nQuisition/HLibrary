@@ -1,34 +1,37 @@
 package com.nquisition.hlibrary.api;
 
+import java.util.List;
+import java.util.function.Predicate;
+
 public abstract class BasePlugin implements IBasePlugin {
 	private IDatabaseInterface dbInterface;
 	private UIManager uiManager;
 	private CustomPropertiesManager propertiesManager;
 	
 	@Override
-	public void setDatabaseInterface(IDatabaseInterface dbInterface) {
+	public final void setDatabaseInterface(IDatabaseInterface dbInterface) {
 		this.dbInterface = dbInterface;
 	}
 	
 	@Override
-	public void setUIManager(UIManager manager) {
+	public final void setUIManager(UIManager manager) {
 		this.uiManager = manager;
 	}
 	
 	@Override
-	public void setCustomPropertiesManager(CustomPropertiesManager propertiesManager) {
+	public final void setCustomPropertiesManager(CustomPropertiesManager propertiesManager) {
 		this.propertiesManager = propertiesManager;
 	}
 	
-	public IDatabaseInterface getDatabaseInterface() {
+	public final IDatabaseInterface getDatabaseInterface() {
 		return dbInterface;
 	}
 	
-	public UIManager getUIManager() {
+	public final UIManager getUIManager() {
 		return uiManager;
 	}
 	
-	public CustomPropertiesManager getCustomPropertiesManager() {
+	public final CustomPropertiesManager getCustomPropertiesManager() {
 		return propertiesManager;
 	}
 }

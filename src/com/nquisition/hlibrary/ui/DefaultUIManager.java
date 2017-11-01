@@ -2,11 +2,13 @@ package com.nquisition.hlibrary.ui;
 
 import java.util.Map;
 
+import com.nquisition.hlibrary.api.UIHelper;
 import com.nquisition.hlibrary.api.UIManager;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.DatabaseInterface;
 
 public class DefaultUIManager extends UIManager {
+	private UIHelper helper;
 	@Override
 	public void constructDefaults(Map<String, Object> parameters) {
 		//FolderViewer, GalleryViewer, LocalDatabaseViewer?, SimilarityViewer, ThumbViewer
@@ -20,5 +22,12 @@ public class DefaultUIManager extends UIManager {
 		GalleryViewerFactory galleryViewerFactory = new GalleryViewerFactory();
 		galleryViewerFactory.setProperty("dbInterface", dbInterface);
 		this.registerUIFactory("GalleryViewer", galleryViewerFactory);
+		
+		helper = new DefaultUIHelper(this, dbInterface);
+	}
+	
+	@Override
+	public UIHelper getUIHelper() {
+		return helper;
 	}
 }

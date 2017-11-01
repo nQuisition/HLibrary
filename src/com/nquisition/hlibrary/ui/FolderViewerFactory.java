@@ -431,7 +431,6 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        
 	        for(GImage img : end)
 	            start.add(img);
-	        end = null;
 	        
 	        gal.addImages(start);
 

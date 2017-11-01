@@ -5,7 +5,7 @@ import java.io.IOException;
 public interface IGImage extends IGEntry {
 	String getName();
 	String getFullPath();
-	//TODO need getParent?
+	IGFolder getParent();
 	boolean isOnTopLevel();
 	boolean computeSimilarity(boolean forceRecompute) throws IOException;
 	//TODO need something like getSimilarityBytes

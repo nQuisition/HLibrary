@@ -21,7 +21,7 @@ public abstract class UIManager {
 	
 	public abstract void constructDefaults(Map<String, Object> parameters);
 	
-	public boolean registerUIFactory(String name, ExtendableGUIFactory factory) {
+	public final boolean registerUIFactory(String name, ExtendableGUIFactory factory) {
 		//TODO maybe don't return false when this fails, insted change name and return it?
 		if(factories.containsKey(name))
 			return false;
@@ -29,23 +29,23 @@ public abstract class UIManager {
 		return true;
 	}
 	
-	public ExtendableGUIFactory getFactory(String name) {
+	public final ExtendableGUIFactory getFactory(String name) {
 		return factories.get(name);
 	}
 	
-	public boolean registerExtension(String elementName, String pos, Node... extensions) {
+	public final boolean registerExtension(String elementName, String pos, Node... extensions) {
 		if(!factories.containsKey(elementName))
 			return false;
 		factories.get(elementName).registerElements(pos, extensions);
 		return true;
 	}
 	
-	public UIView buildFromFactory(String name, boolean critical) {
+	public final UIView buildFromFactory(String name, boolean critical) {
 		return buildFromFactory(name, null, critical);
 	}
 	
 	//TODO safe? Allows to overwrite params defined by default etx.
-	public UIView buildFromFactory(String name, Map<String, Object> params, boolean critical) {
+	public final UIView buildFromFactory(String name, Map<String, Object> params, boolean critical) {
 		if(!factories.containsKey(name))
 			return null;
 		ExtendableGUIFactory factory = factories.get(name);
@@ -67,7 +67,7 @@ public abstract class UIManager {
 		return element;
 	}
 	
-	public boolean requestClose(UIView element) {
+	public final boolean requestClose(UIView element) {
 		String name = reverseElements.get(element);
 		if(name == null) {
 			//TODO exception?
@@ -84,4 +84,6 @@ public abstract class UIManager {
 		criticalElements.remove(element);
 		return true;
 	}
+	
+	public abstract UIHelper getUIHelper();
 }

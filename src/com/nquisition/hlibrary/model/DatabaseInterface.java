@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +24,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.api.IDatabaseInterface;
+import com.nquisition.hlibrary.api.IGImage;
 import com.nquisition.hlibrary.api.ProgressManager;
 import com.nquisition.hlibrary.api.ProgressMonitor;
 
@@ -414,6 +416,24 @@ public class DatabaseInterface implements IDatabaseInterface
 	//TODO belongs here?
 	public void checkVerticality(double tV, double tH, boolean nameOnly) {
 		activeDatabase.checkVerticality(tV, tH, nameOnly);
+	}
+	
+	public List<GImage> getImagesSatisfyingConditions(List<Predicate<IGImage>> conditions) {
+		List<GImage> images = activeDatabase.getImages();
+		List<GImage> res = new ArrayList<>(); 
+		for(GImage image : images) {
+			boolean failed = false;
+			for(Predicate<IGImage> predicate : conditions) {
+				if(!predicate.test(image)) {
+					failed = true;
+					break;
+				}
+			}
+			if(failed)
+				continue;
+			res.add(image);
+		}
+		return res;
 	}
 	
 	public static boolean convert(String inFile, String outFile) {

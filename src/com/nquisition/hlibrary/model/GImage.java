@@ -46,7 +46,8 @@ public class GImage extends GEntry implements IGImage
     public static final transient int RESOLUTION = 16;
     public static final transient String COMMENT_SEPARATOR = ">>";
     
-    public String toString()
+    @Override
+	public String toString()
     {
         String res = "[";
         for(String tag : this.getTags())
@@ -122,19 +123,22 @@ public class GImage extends GEntry implements IGImage
         return id;
     }
     
-    public String getName()
+    @Override
+	public String getName()
     {
         return name;
     }
     
-    public String getFullPath()
+    @Override
+	public String getFullPath()
     {
         if(parent == null)
             return name;
         return parent.getPath() + name;
     }
     
-    public GFolder getParent()
+    @Override
+	public GFolder getParent()
     {
         return parent;
     }
@@ -144,7 +148,8 @@ public class GImage extends GEntry implements IGImage
     	return parent==null?null:parent.getTopLevelParent();
     }
     
-    public boolean isOnTopLevel() {
+    @Override
+	public boolean isOnTopLevel() {
     	return (parent == this.getTopLevelParent());
     }
     
