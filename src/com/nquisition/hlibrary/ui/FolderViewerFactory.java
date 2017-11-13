@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.api.AbstractGUIFactory;
 import com.nquisition.hlibrary.api.ExtendableGUIElement;
+import com.nquisition.hlibrary.api.ProgressMonitor;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.fxutil.HFXFactory;
 import com.nquisition.hlibrary.model.DatabaseInterface;
@@ -24,9 +24,13 @@ import com.nquisition.hlibrary.model.GImage;
 import com.nquisition.hlibrary.model.GImageList;
 import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.util.CreationTimeFileComparator;
+import com.nquisition.util.FileUtils;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -84,10 +88,12 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	    private static class FolderEntry {
 	    	private String path;
 	    	private GFolder folder;
+	    	private BooleanProperty hasLocalDB;
 	    	
-	    	public FolderEntry(String path, GFolder folder) {
+	    	public FolderEntry(String path, GFolder folder, boolean hasLocalDB) {
 	    		this.path = path;
 	    		this.folder = folder;
+	    		this.hasLocalDB = new SimpleBooleanProperty(hasLocalDB);
 	    	}
 	    	
 	    	public String getPath() {
@@ -100,6 +106,18 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	    	
 	    	public void setFolder(GFolder folder) {
 	    		this.folder = folder;
+	    	}
+	    	
+	    	public boolean hasLocalDB() {
+	    		return hasLocalDB.get();
+	    	}
+	    	
+	    	public void setHasLocalDB(boolean b) {
+	    		hasLocalDB.set(b);
+	    	}
+	    	
+	    	public BooleanProperty hasLocalDBProperty() {
+	    		return hasLocalDB;
 	    	}
 	    }
 	       
@@ -143,13 +161,17 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        thumbsButton.setOnAction( e -> viewAddThumbs() );
 	        Button viewAddButton = new Button("Go");
 	        viewAddButton.setOnAction( e -> viewAddFolders() );
+	        Button createLocalButton = new Button("Create Local DBs");
+	        createLocalButton.setOnAction( e -> createLocalDBs() );
+	        Button viewLocalDatabaseButton = new Button("View Local");
+	        viewLocalDatabaseButton.setOnAction( e -> viewLocalDBs() );
 	        
 	        thumbsButton.setMaxWidth(Double.MAX_VALUE);
 	        viewAddButton.setMaxWidth(Double.MAX_VALUE);
 	        VBox topButtonsBox = new VBox();
 	        topButtonsBox.setSpacing(5);
 	        topButtonsBox.setPadding(new Insets(40, 10, 0, 10));
-	        topButtonsBox.getChildren().addAll(thumbsButton, viewAddButton);
+	        topButtonsBox.getChildren().addAll(thumbsButton, viewAddButton, createLocalButton, viewLocalDatabaseButton);
 	        topButtonsBox.getChildren().addAll(topButtons);
 	        HBox viewAddBox = new HBox();
 	        viewAddBox.setPadding(new Insets(10, 10, 10, 10));
@@ -199,6 +221,8 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	                    	//TODO a lot of unnecessary updates?
 	                    	if(item.getFolder() != null) {
 	                    		setStyle("-fx-text-fill:red; -fx-font-weight:bold;");
+	                    	} else if(item.hasLocalDB()) {
+	                    		setStyle("-fx-text-fill:blue; -fx-font-weight:bold;");
 	                    	} else {
 	                    		setStyle("");
 	                    	}
@@ -254,11 +278,11 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        
 	        for(int i = 0; i < folders.size(); i++) {
 	            if(folders.get(i).getFolder() == null 
-	            		&& !dbInterface.addDirectory(root + folders.get(i).getPath(), 1)) {
+	            		&& !dbInterface.addDirectoryToActive(root + folders.get(i).getPath(), 1)) {
                     logger.warn("Failed to add directory/subdirectories to the database");
                 }
 	        }
-	        dbInterface.checkVerticality(1.0, 1.0, true);
+	        dbInterface.checkActiveVerticality(1.0, 1.0, true);
 
 	        //TODO
 	        Gallery gal = new Gallery(dbInterface.getActiveDatabase());
@@ -299,6 +323,86 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        //TODO Reset list1, since there will be more folders with PREFIX
 	    }
 	    
+	    public void createLocalDBs() {
+	    	//FIXME need different monitor without Timeline
+	    	ProgressMonitor monitor = HLibrary.requestProgressMonitor("Creating local DBs");
+	    	monitor.start(list1.getSelectionModel().getSelectedItems().size());
+	    	for(FolderEntry entry : list1.getSelectionModel().getSelectedItems()) {
+	    		monitor.add(1);
+	    		String folder = root + entry.getPath();
+	    		if(!folder.endsWith("\\"))
+	    			folder = folder + "\\";
+	    		File f = new File(folder + "db.hdb");
+	            
+	            if(!f.exists()) {
+	                logger.info("Initializing local DB in folder \"" + folder + "\"; Rotating images..");
+	                FileUtils.rotateImagesBasedOnEXIF(folder, true);
+	                logger.info("Success!");
+	                if(!dbInterface.createDatabase(folder + "db.hdb", true, false)) {
+	                    logger.fatal("Unable to create new file \"" + (folder + "db.hdb") + "\"");
+	                    continue;
+	                }
+	                if(!dbInterface.addDirectory(folder + "db.hdb", folder, 1)) {
+	                    logger.warn("Problems adding directory to database; Some directories may not have been added");
+	                }
+	                dbInterface.getDatabase(folder + "db.hdb").checkVerticality(1.0, 1.0, true);
+	                if(!dbInterface.saveDatabase(folder + "db.hdb")) {
+	                    logger.warn("Unable to save database; Any changes made most likely will be lost");
+	                } else {
+	                	entry.setHasLocalDB(true);
+	                }
+	            }
+	        }
+	    	list1.refresh();
+	    }
+	    
+	    public void viewLocalDBs() {
+	        List<FolderEntry> folders = new ArrayList<>();
+	        for(FolderEntry entry : list1.getSelectionModel().getSelectedItems()) {
+	        	if(entry.hasLocalDB())
+	        		folders.add(entry);
+	        }
+	        
+	        if(folders.isEmpty())
+	        	return;
+	        
+	        //TODO ugly
+	        FolderEntry folder = folders.get(0);
+	        String location = root + folder.getPath() + "\\db.hdb";
+	        if(!dbInterface.loadDatabase(location, true, false)) {
+	        	logger.error("Failed to load database \"" + location + "\"");
+	        	return;
+	        }
+
+	        //TODO
+	        Gallery gal = new Gallery(dbInterface.getDatabase(location));
+	        List<GImage> end = new ArrayList<>();
+	        List<GImage> start = new ArrayList<>();
+	      //TODO
+            List<GImage> imgs = dbInterface.getDatabase(location).getImages();
+            System.out.println(imgs.size());
+            
+            for(GImage img : imgs) {
+                if(img.hasTag("vertical")) {
+                    end.add(img);
+                } else {
+                	start.add(img);
+                }
+            }
+	            
+	        for(GImage img : end)
+	            start.add(img);
+	        gal.addImages(start);
+
+	        Map<String, Object> galParams = new HashMap<>();
+            galParams.put("gallery", gal);
+            UIView gw = HLibrary.getUIManager().buildFromFactory("GalleryViewer", galParams, false);
+            gw.setOnCloseRequest(e -> dbInterface.saveDatabase(location));
+	        gw.show();
+
+	        //TODO Reset list1, since there will be more folders with PREFIX
+	    }
+	    
 	    public void viewAddThumbs() {
 	        List<FolderEntry> folders = new ArrayList<>();
 	        for(FolderEntry entry : list1.getSelectionModel().getSelectedItems()) {
@@ -308,11 +412,11 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        for(int i = 0; i < folders.size(); i++)
 	        {
 	        	if(folders.get(i).getFolder() == null 
-	            		&& !dbInterface.addDirectory(root + folders.get(i).getPath(), 1)) {
+	            		&& !dbInterface.addDirectoryToActive(root + folders.get(i).getPath(), 1)) {
                     logger.warn("Failed to add directory/subdirectories to the database");
                 }
 	        }
-	        dbInterface.checkVerticality(1.0, 1.0, true);
+	        dbInterface.checkActiveVerticality(1.0, 1.0, true);
 
 	        ArrayList<GFolder> start = new ArrayList<>();
 	        for(FolderEntry f : folders)
@@ -365,144 +469,10 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        }
 	    }
 	    
-	    public void viewTaggedGallery()
-	    {
-	        ArrayList<String> allowed = new ArrayList<>(), restricted = new ArrayList<String>(), names = new ArrayList<String>();
-	        String[] arr = tagInput.getText().trim().split(" ");
-	        for(int i = 0; i < arr.length; i++)
-	        {
-	            if(arr[i] == null || arr[i].length()<=0)
-	                continue;
-	            if(arr[i].charAt(0) == '-')
-	            	//TODO
-	                restricted.add(dbInterface.getActiveDatabase().getTag(arr[i].substring(1)));
-	            else if(arr[i].charAt(0) == ':')
-	                names.add(arr[i].substring(1));
-	            else
-	            	//TODO
-	                allowed.add(dbInterface.getActiveDatabase().getTag(arr[i]));
-	        }
-	        
-	        //TODO
-	        Gallery gal = new Gallery(dbInterface.getActiveDatabase());
-	        ArrayList<GImage> end = new ArrayList<>();
-	        ArrayList<GImage> start = new ArrayList<>();
-	        ArrayList<Integer> visitedLists = new ArrayList<>();
-	        for(GImage img : dbInterface.getImages())
-	        {
-	            if((!img.hasAllTags(allowed) || !img.hasNoTags(restricted)) && (names.size() <= 0 || !img.nameFolderContains(names)))
-	                continue;
-	            
-	            GImageList l = img.getList();
-	            if(l != null && groupLists)
-	            {
-	                if(visitedLists.contains(l.getID()))
-	                    continue;
-	                ArrayList<GImage> imgs = l.getImages();
-	                for(GImage imga : imgs)
-	                {
-	                    if(forceDisplayWholeList 
-	                            || !(!imga.hasAllTags(allowed) || !imga.hasNoTags(restricted)) && (names.size() <= 0 || !imga.nameFolderContains(names)))
-	                    {
-	                        if(groupOrientations || imga.hasTag("horizontal"))
-	                        {
-	                            start.add(imga);
-	                        }
-	                        else if(imga.hasTag("vertical"))
-	                        {
-	                            end.add(imga);
-	                        }
-	                    }
-	                }
-	                visitedLists.add(l.getID());
-	                continue;
-	            }
-	                
-	            
-	            if(img.hasTag("horizontal"))
-	            {
-	                start.add(img);
-	            }
-	            else if(img.hasTag("vertical"))
-	            {
-	                end.add(img);
-	            }
-	        }
-	        
-	        for(GImage img : end)
-	            start.add(img);
-	        
-	        gal.addImages(start);
-
-	        if(start.size() <= 0)
-	        {
-	            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-	            alert.setContentText("No images that match tags found!");
-	            alert.showAndWait();
-	        }
-	        else
-	        {
-	        	Map<String, Object> galParams = new HashMap<>();
-	            galParams.put("gallery", gal);
-	            UIView gw = HLibrary.getUIManager().buildFromFactory("GalleryViewer", galParams, false);
-	            gw.show();
-	        }
+	    public void viewTaggedGallery() {
+	        HLibrary.getUIManager().getUIHelper().showImagesWithTags(tagInput.getText());
 	    }
 	    
-	    //TODO move
-	    public void copyFavs()
-	    {
-	        String location = "G:\\New Folder\\";
-	        int counter = 0;
-	        ArrayList<Process> procs = new ArrayList<>();
-	        for(GImage img : dbInterface.getImages())
-	        {
-	            if(!img.hasTag("fav"))
-	                continue;
-	            
-	            String prefix = getPrefix(counter);
-	            counter++;
-	            if(img.hasTag("vertical"))
-	                prefix = "末vert_" + prefix;
-	            
-	            File src = new File(img.getFullPath());
-	            File dest = new File(location + prefix + img.getName());
-	            try
-	            {
-	                FileUtils.copyFile(src, dest);
-	                
-	                if(img.hasTag("vertical"))
-	                {
-	                    /*while(procs.size() >= NUM_PROCESSES)
-	                    {
-	                        Iterator<Process> iter = procs.iterator();
-	                        while (iter.hasNext())
-	                        {
-	                            Process p = iter.next();
-	                            if(!p.isAlive())
-	                            {
-	                                p = null;
-	                                iter.remove();
-	                            }
-	                        }
-	                        Thread.sleep(10);
-	                    }
-
-	                    Process p = rotateImageEx(location, prefix + img.getName(), false);
-	                    if(p != null)
-	                        procs.add(p);*/
-	                }
-	            }
-	            catch(IOException e)
-	            {
-	                e.printStackTrace();
-	            }
-	            /*catch(InterruptedException e)
-	            {
-	                
-	            }*/
-	        }
-	    }
 	    //TODO move
 	    private String getPrefix(int c)
 	    {
@@ -520,22 +490,21 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        return res;
 	    }
 	    
-	    public List<FolderEntry> getFolders()
-	    {
+	    public List<FolderEntry> getFolders() {
 	        List<FolderEntry> res = new ArrayList<>();
 	        File p = new File(root);
 	        if(!p.exists() || !p.isDirectory())
 	            return new ArrayList<>();
 	        File[] listOfFiles = p.listFiles();
 	        Arrays.sort(listOfFiles, new CreationTimeFileComparator());
-	        for(int i = 0; i < listOfFiles.length; i++)
-	        {
+	        for(int i = 0; i < listOfFiles.length; i++) {
 	            if(!listOfFiles[i].isDirectory())
 	                continue;
 
+	            File check = new File(listOfFiles[i].getAbsolutePath() + "\\db.hdb");
             	//TODO
 	            GFolder folder = dbInterface.getActiveDatabase().getFolderByName(listOfFiles[i].getAbsolutePath() + "\\");
-                res.add(new FolderEntry(listOfFiles[i].getName(), folder));
+                res.add(new FolderEntry(listOfFiles[i].getName(), folder, check.exists()));
 	        }
 	        
 	        return res;

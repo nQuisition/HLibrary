@@ -26,7 +26,7 @@ import javafx.util.Duration;
 //the progress bar, register with the monitor and it will return a token that can be used
 //to inform the monitor of change of progress. It then updates appropriate bar and label
 public class HProgressManager extends Stage implements ProgressManager {
-	private static final int REFRESH_DELAY = 50;
+	private static final int REFRESH_DELAY = 500;
 	
 	private Map<MultiProgressMonitor, Node> progressMonitors = new HashMap<>();
 	private VBox container;
@@ -47,6 +47,8 @@ public class HProgressManager extends Stage implements ProgressManager {
 		Node element = monitor.getUIElement();
 		progressMonitors.put(monitor, element);
 		container.getChildren().add(element);
+		this.show();
+		this.toFront();
 		return monitor;
 	}
 	
@@ -56,6 +58,8 @@ public class HProgressManager extends Stage implements ProgressManager {
 			return;
 		container.getChildren().remove(element);
 		progressMonitors.remove(monitor);
+		if(progressMonitors.isEmpty())
+			this.hide();
 	}
 	
 	private class MultiProgressMonitor implements ProgressMonitor {

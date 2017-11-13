@@ -110,9 +110,8 @@ public class HLibrary extends Application implements PropertyProvider
         for(String p : params)
             System.out.println(p);*/
         
-        dbInterface = new DatabaseInterface(null);
+        dbInterface = new DatabaseInterface();
         progressManager = new HProgressManager();
-        progressManager.show();
         
         //TODO putting dbinterface into uimanager before database is loaded - is it OK?
         Map<String, Object> uiParams = new HashMap<>();
@@ -147,10 +146,10 @@ public class HLibrary extends Application implements PropertyProvider
         	plugin.start();
         
         int count = 0;
-        for(GImage img : dbInterface.getImages())
+        for(GImage img : dbInterface.getActiveImages())
         	if(img.getSimilarityString() != null)
         		count++;
-        System.out.println(count + "/" + dbInterface.getImages().size());
+        System.out.println(count + "/" + dbInterface.getActiveImages().size());
         
         //TODO need something like this for TaskManager
         /*ExecutorService es = Executors.newSingleThreadExecutor ();
@@ -320,18 +319,18 @@ public class HLibrary extends Application implements PropertyProvider
             System.exit(-1);
         }
         
-        dbInterface.getFolders().stream()
+        dbInterface.getActiveFolders().stream()
         		.sorted((a,b) -> a.getFavPercentage(false)<b.getFavPercentage(false)?1:a.getFavPercentage(false)>b.getFavPercentage(false)?-1:0)
         		.forEach(a -> System.out.println((Math.round(a.getFavPercentage(false)*10000D)/100D) + "% :: " + a.getPath()));
         
-        dbInterface.info();
+        dbInterface.activeInfo();
         
         /*Database db1 = new Database(false);
         db1.setLocation(Properties.get("dbroot","dbname"));
         db1.loadDatabase();
         db1.info();*/
 
-        List<GImage> images = dbInterface.getImages();
+        List<GImage> images = dbInterface.getActiveImages();
         List<String> tags = new ArrayList<>();
         for(GImage img : images)
         {
@@ -400,10 +399,11 @@ public class HLibrary extends Application implements PropertyProvider
                     Platform.exit();
                     System.exit(-1);
                 }
-                if(!dbInterface.addDirectory(folder, 1)) {
+                if(!dbInterface.addDirectoryToActive(folder, 1)) {
                     logger.warn("Problems adding directory to database; Some directories may not have been added");
                 }
-                if(!dbInterface.saveDatabase()) {
+                dbInterface.getDatabase(folder + "db.hdb").checkVerticality(1.0, 1.0, true);
+                if(!dbInterface.saveActiveDatabase()) {
                     logger.warn("Unable to save database; Any changes made most likely will be lost");
                 }
             } else {
@@ -418,7 +418,7 @@ public class HLibrary extends Application implements PropertyProvider
             //TODO
             Gallery gal = new Gallery(dbInterface.getActiveDatabase());
 
-            gal.addImages(dbInterface.getImages());
+            gal.addImages(dbInterface.getActiveImages());
 
             Map<String, Object> galParams = new HashMap<>();
             galParams.put("gallery", gal);
@@ -439,7 +439,7 @@ public class HLibrary extends Application implements PropertyProvider
             //TODO
             Gallery gal = new Gallery(dbInterface.getActiveDatabase());
 
-            gal.addImages(dbInterface.getImages());
+            gal.addImages(dbInterface.getActiveImages());
 
             Map<String, Object> galParams = new HashMap<>();
             galParams.put("gallery", gal);
@@ -458,7 +458,7 @@ public class HLibrary extends Application implements PropertyProvider
             System.exit(-1);
         }
 
-        List<GImage> images = dbInterface.getImages();
+        List<GImage> images = dbInterface.getActiveImages();
         List<String> tags = new ArrayList<>();
         for(GImage img : images)
         {
@@ -486,7 +486,7 @@ public class HLibrary extends Application implements PropertyProvider
     public void saveAndExit(boolean waitForEnter) {
     	for(BasePlugin plugin : plugins)
     		plugin.stop();
-    	if(!dbInterface.saveDatabase()) {
+    	if(!dbInterface.saveActiveDatabase()) {
         	//TODO saving failed, prompt!
         }
         logger.info("Closing application");

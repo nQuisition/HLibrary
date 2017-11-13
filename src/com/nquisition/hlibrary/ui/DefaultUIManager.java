@@ -8,7 +8,7 @@ import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.DatabaseInterface;
 
 public class DefaultUIManager extends UIManager {
-	private UIHelper helper;
+	private DefaultUIHelper helper;
 	@Override
 	public void constructDefaults(Map<String, Object> parameters) {
 		//FolderViewer, GalleryViewer, LocalDatabaseViewer?, SimilarityViewer, ThumbViewer

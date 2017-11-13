@@ -3,8 +3,8 @@ package com.nquisition.hlibrary.api;
 import java.util.List;
 
 public interface IDatabaseInterface {
-	List<? extends IGFolder> getFolders();
-	List<? extends IGImage> getImages();
+	List<? extends IGFolder> getActiveFolders();
+	List<? extends IGImage> getActiveImages();
 	
-	boolean addDirectory(String path, int depth);
+	boolean addDirectoryToActive(String path, int depth);
 }

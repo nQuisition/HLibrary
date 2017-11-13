@@ -28,12 +28,12 @@ public class DefaultUIHelper implements UIHelper {
 	}
 
 	@Override
-	public void showImagesSatisfyingConditions(List<Predicate<IGImage>> conditions) {
+	public void showImagesSatisfyingConditions(List<Predicate<IGImage>> imageConditions) {
 		Gallery gal = new Gallery(dbInterface.getActiveDatabase());
         List<GImage> end = new ArrayList<>();
         List<GImage> start = new ArrayList<>();
         
-        for(GImage img : dbInterface.getImagesSatisfyingConditions(conditions)) {
+        for(GImage img : dbInterface.getActiveImagesSatisfyingConditions(imageConditions)) {
             if(img.hasTag("horizontal")) {
                 start.add(img);
             } else if(img.hasTag("vertical")) {
@@ -48,7 +48,7 @@ public class DefaultUIHelper implements UIHelper {
 
         if(start.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setContentText("No images that match tags found!");
+            alert.setContentText("No images that match conditions found!");
             alert.showAndWait();
         } else {
         	Map<String, Object> galParams = new HashMap<>();
@@ -57,5 +57,71 @@ public class DefaultUIHelper implements UIHelper {
             gw.show();
         }
 	}
-
+	
+	public void showImagesWithTags(String tagString) {
+		List<String> allowed = new ArrayList<>();
+		List<String> restricted = new ArrayList<>();
+		
+        String[] arr = tagString.trim().split(" ");
+        for(int i = 0; i < arr.length; i++) {
+            if(arr[i] == null || arr[i].length()<=0)
+                continue;
+            if(arr[i].charAt(0) == '-')
+                restricted.add(arr[i].substring(1));
+            else
+                allowed.add(arr[i]);
+        }
+        List<Predicate<IGImage>> conditions = new ArrayList<>();
+        for(String cond : allowed) {
+        	boolean isFolder = false;
+        	if(cond.charAt(0) == ':') {
+        		isFolder = true;
+        		cond = cond.substring(1);
+        	}
+        	String condFinal = cond;
+        	int separatorIndex = cond.indexOf(':');
+        	if(separatorIndex > 0) {
+        		String propName = cond.substring(0, separatorIndex);
+        		String propValue = cond.substring(separatorIndex+1);
+        		if(isFolder)
+        			conditions.add(image -> (image.getParent() != null &&
+        				image.getParent().getProperty(propName) != null && 
+        				image.getParent().getProperty(propName).toString().equalsIgnoreCase(propValue)));
+        		else
+        			conditions.add(image -> (image.getProperty(propName) != null && 
+        				image.getProperty(propName).toString().equalsIgnoreCase(propValue)));
+        	} else {
+        		if(isFolder)
+        			conditions.add(image -> image.getParent() != null && image.getParent().hasTag(condFinal));
+        		else
+        			conditions.add(image -> image.hasTag(condFinal));
+        	}
+        }
+        for(String cond : restricted) {
+        	boolean isFolder = false;
+        	if(cond.charAt(0) == ':') {
+        		isFolder = true;
+        		cond = cond.substring(1);
+        	}
+        	String condFinal = cond;
+        	int separatorIndex = cond.indexOf(':');
+        	if(separatorIndex > 0) {
+        		String propName = cond.substring(0, separatorIndex);
+        		String propValue = cond.substring(separatorIndex+1);
+        		if(isFolder)
+        			conditions.add(image -> !(image.getParent() != null &&
+        				image.getParent().getProperty(propName) != null && 
+        				image.getParent().getProperty(propName).toString().equalsIgnoreCase(propValue)));
+        		else
+        			conditions.add(image -> !(image.getProperty(propName) != null && 
+        				image.getProperty(propName).toString().equalsIgnoreCase(propValue)));
+        	} else if(separatorIndex < 0) {
+        		if(isFolder)
+        			conditions.add(image -> !(image.getParent() != null && image.getParent().hasTag(condFinal)));
+        		else
+        			conditions.add(image -> !image.hasTag(condFinal));
+        	}
+        }
+        showImagesSatisfyingConditions(conditions);
+	}
 }

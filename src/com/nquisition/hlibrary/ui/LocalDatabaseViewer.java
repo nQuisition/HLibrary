@@ -10,6 +10,7 @@ import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.Database;
+import com.nquisition.hlibrary.model.DatabaseInterface;
 import com.nquisition.hlibrary.model.GImage;
 import java.io.*;
 import java.util.*;
@@ -34,7 +35,7 @@ public class LocalDatabaseViewer extends HConsoleStage
     
     private final Logger logger;*/
     
-    private Database db;
+    private DatabaseInterface dbInterface;
     private String root;
     
     private ListView<String> list1;
@@ -44,7 +45,7 @@ public class LocalDatabaseViewer extends HConsoleStage
     public LocalDatabaseViewer(String folder)
     {
         super();
-        db = new Database(true);
+        dbInterface = new DatabaseInterface();
         
         root = folder;
         
@@ -57,7 +58,7 @@ public class LocalDatabaseViewer extends HConsoleStage
         list1.setEditable(false);
         
         Button button1 = new Button("Go");
-        button1.setOnAction((ActionEvent e) -> { viewFolders(); });
+        button1.setOnAction(e -> viewFolders() );
         VBox box1 = new VBox(list1, button1);
         
         ArrayList<String> folders = this.getFolders();
@@ -88,12 +89,11 @@ public class LocalDatabaseViewer extends HConsoleStage
         }
         //db.checkVerticality(1.0, 1.0, true);
 
-        Gallery gal = new Gallery(db);
+        Gallery gal = new Gallery(dbInterface.getActiveDatabase());
         ArrayList<GImage> start = new ArrayList<>();
         for(String f : folders)
         {
-            ArrayList<GImage> imgs = new ArrayList<>();
-            db.getRootFolder(root + f + "\\").getAllImages(imgs);
+            ArrayList<GImage> imgs = dbInterface.getDatabase(root + f + "\\").getImages();
             for(GImage img : imgs)
             {
                 start.add(img);
@@ -136,12 +136,12 @@ public class LocalDatabaseViewer extends HConsoleStage
                 String path = listOfFiles[i].getCanonicalPath();
                 if(!path.endsWith("\\"))
                     path = path + "\\";
-                db.loadDatabase(fl, false);
+                dbInterface.loadDatabase(fl, true);
                 
-                System.out.println(db.getFolderByName(path).getRating() + " - " + listOfFiles[i].getName());
+                System.out.println(dbInterface.getActiveDatabase().getFolderByName(path).getRating() + " - " + listOfFiles[i].getName());
                 //System.out.println(path + " :: " + db.getFolderByName(path));
                 
-                res.add(db.getFolderByName(path).getRating() + " - " + listOfFiles[i].getName());
+                res.add(dbInterface.getActiveDatabase().getFolderByName(path).getRating() + " - " + listOfFiles[i].getName());
             }
             catch(IOException e)
             {

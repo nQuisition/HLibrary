@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,19 +32,33 @@ import com.nquisition.hlibrary.api.ProgressMonitor;
 public class DatabaseInterface implements IDatabaseInterface
 {
 	private static final Logger logger = LogManager.getLogger(DatabaseInterface.class);
-	private Database activeDatabase;
+	private Map<String, Database> databases = new HashMap<>();
+	private Database activeDatabase = null;
 	
-	public DatabaseInterface(Database db)
-	{
-		activeDatabase = db;
-	}
-	
+	//TODO think this method should be removed
 	public Database getActiveDatabase()
 	{
 		return activeDatabase;
 	}
 	
+	//TODO think this method should be removed
+	public Database getDatabase(String location) {
+		if(!databases.containsKey(location)) {
+			logger.warn("Database \"" + location + "\" is not loaded!");
+			return null;
+		}
+		return databases.get(location);
+	}
+	
 	public boolean loadDatabase(String fileName, boolean local) {
+		return loadDatabase(fileName, local, true);
+	}
+	
+	public boolean loadDatabase(String fileName, boolean local, boolean setAsActive) {
+		if(databases.containsKey(fileName)) {
+			logger.info("Database \"" + fileName + "\" is already loaded, skipping");
+			return true;
+		}
 		//check if file is JSON
 		boolean isJson = false;
 		try(BufferedReader in = new BufferedReader(new FileReader(fileName))) {
@@ -59,30 +74,41 @@ public class DatabaseInterface implements IDatabaseInterface
 			activeDatabase = null;
 			return false;
 		}
+		Database db = null;
 		if(isJson) {
-			boolean res = readDatabaseFromJson(fileName, local);
+			db = readDatabaseFromJson(fileName, local);
 			//No images after loading -> fail
 			//TODO maybe change this and allow databases to have some other metadata (like its location)
-			if(!res || activeDatabase.getImages().size() <= 0)
+			if(db == null || db.getImages().size() <= 0)
 				return false;
 		} else {
 			//Legacy format
-			activeDatabase = new Database(local);
-			activeDatabase.setLocation(fileName);
+			db = new Database(local);
+			db.setLocation(fileName);
 	
 	        //TODO deffinitely there are better actions if it fails
-	        if(activeDatabase.loadDatabase() < 0) {
+	        if(db.loadDatabase() < 0) {
 	            logger.fatal("Unable to load database!");
-	            activeDatabase = null;
 	            return false;
 	        }
 		}
-		activeDatabase.sortFolders();
+		db.sortFolders();
+		databases.put(fileName, db);
+		if(setAsActive)
+			activeDatabase = db;
         return true;
 	}
 	
-	//TODO use this in loadDatabase when the specified file doesn't exist?
 	public boolean createDatabase(String location, boolean local) {
+		return createDatabase(location, local, true);
+	}
+	
+	//TODO use this in loadDatabase when the specified file doesn't exist?
+	public boolean createDatabase(String location, boolean local, boolean setAsActive) {
+		if(databases.containsKey(location)) {
+			logger.info("Database \"" + location + "\" is already loaded, skipping");
+			return true;
+		}
 		File f = new File(location);
 		if(f.exists())
 			return false;
@@ -92,17 +118,30 @@ public class DatabaseInterface implements IDatabaseInterface
 			logger.warn("An exception has occured", e);
 			return false;
 		}
-		activeDatabase = new Database(local);
-		activeDatabase.setLocation(location);
+		
+		Database db = new Database(local);
+		db.setLocation(location);
+		databases.put(location, db);
+		if(setAsActive)
+			activeDatabase = db;
 		return true;
 	}
 	
-	public boolean saveDatabase() {
+	public boolean saveDatabase(String location) {
+		if(!databases.containsKey(location)) {
+			logger.warn("Database \"" + location + "\" is not loaded!");
+			return false;
+		}
+		Database db = databases.get(location);
+		return saveDatabase(db);
+	}
+	
+	private static boolean saveDatabase(Database db) {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
-        	activeDatabase.nullifyEmptyStrings();
-        	String json = gson.toJson(activeDatabase);
-        	PrintWriter out = new PrintWriter(activeDatabase.getLocation());
+        	db.nullifyEmptyStrings();
+        	String json = gson.toJson(db);
+        	PrintWriter out = new PrintWriter(db.getLocation(), "UTF-8");
         	out.write(json);
         	out.close();
         } catch(IOException e) {
@@ -112,28 +151,53 @@ public class DatabaseInterface implements IDatabaseInterface
         return true;
 	}
 	
+	public boolean saveActiveDatabase() {
+		return saveDatabase(activeDatabase);
+	}
+	
+	public void unloadDatabase(String location, boolean save) {
+		Database db = databases.get(location);
+		if(db == null)
+			return;
+		if(db == activeDatabase) {
+			logger.warn("Cannot unload the active database!");
+			return;
+		}
+		if(save)
+			saveDatabase(db);
+		databases.remove(location);
+	}
+	
 	@Override
-	public List<GFolder> getFolders() {
+	public List<GFolder> getActiveFolders() {
 		return new ArrayList<>(activeDatabase.getFolders());
 	}
 	
 	@Override
-	public List<GImage> getImages() {
+	public List<GImage> getActiveImages() {
 		return new ArrayList<>(activeDatabase.getImages());
 	}
 	
-	public void info() {
+	public void activeInfo() {
 		activeDatabase.info();
 	}
 	
+	public boolean addDirectory(String dbLocation, String path, int depth) {
+		if(!databases.containsKey(dbLocation)) {
+			logger.warn("Database \"" + dbLocation + "\" is not loaded!");
+			return false;
+		}
+		return databases.get(dbLocation).addDirectory(path, depth) >= 0;
+	}
+	
 	@Override
-	public boolean addDirectory(String path, int depth) {
+	public boolean addDirectoryToActive(String path, int depth) {
 		return activeDatabase.addDirectory(path, depth) >= 0;
 	}
 	
 	//TODO memory leaks?
-	public Callable<Integer> computeSimilarityStrings() {
-		List<GImage> images = this.getImages(); 
+	public Callable<Integer> computeActiveSimilarityStrings() {
+		List<GImage> images = this.getActiveImages(); 
 		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Computing similarity strings");
 		progressMonitor.start(images.size());
 		
@@ -173,8 +237,8 @@ public class DatabaseInterface implements IDatabaseInterface
 	//TODO memory leaks?
 	//TODO compute similarity or leave like this?
 	//Assumes similarity is computed; skips images without similarity info
-	public Callable<Map<GImage, List<GImage>>> findSimilarImages(int threshold) {
-		List<GImage> images = this.getImages();
+	public Callable<Map<GImage, List<GImage>>> findActiveSimilarImages(int threshold) {
+		List<GImage> images = this.getActiveImages();
 		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Finding similar images");
 		progressMonitor.start(images.size());
 		
@@ -202,23 +266,26 @@ public class DatabaseInterface implements IDatabaseInterface
 		};
 	}
 	
-	public boolean readDatabaseFromJson(String fileName, boolean local)
+	private Database readDatabaseFromJson(String fileName, boolean local)
 	{
-		JsonReader reader;
+		JsonReader reader = null;
 		try
 		{
-			reader = new JsonReader(new InputStreamReader(new FileInputStream(fileName)));
+			reader = new JsonReader(new InputStreamReader(new FileInputStream(fileName), "UTF-8"));
 		}
 		catch(FileNotFoundException e)
 		{
 			logger.warn("File not found " + fileName, e);
-			return false;
+			return null;
+		} catch(UnsupportedEncodingException e) {
+			logger.warn("Unsupported encoding " + fileName, e);
+			return null;
 		}
-		
+		Database db = null;
 		try
 		{
-			activeDatabase = new Database(local);
-			activeDatabase.setLocation(fileName);
+			db = new Database(local);
+			db.setLocation(fileName);
 			reader.beginObject();
 			while(reader.hasNext())
 			{
@@ -228,13 +295,13 @@ public class DatabaseInterface implements IDatabaseInterface
 					reader.beginArray();
 					while(reader.hasNext())
 					{
-						activeDatabase.addGFolder(readGFolderFromJson(reader), false);
+						db.addGFolder(readGFolderFromJson(reader), false);
 					}
 					reader.endArray();
 				}
 				else if(name.equals("dict"))
 				{
-					activeDatabase.setTagDictionary(readTagDictionaryFromJson(reader));
+					db.setTagDictionary(readTagDictionaryFromJson(reader));
 		    	}
 				else
 				{
@@ -246,7 +313,7 @@ public class DatabaseInterface implements IDatabaseInterface
 		catch(IOException e)
 		{
 			logger.warn("An exception has occured", e);
-			return false;
+			return null;
 		}
 		finally
 		{
@@ -259,7 +326,7 @@ public class DatabaseInterface implements IDatabaseInterface
 				logger.warn("An exception has occured", e);
 			}
 		}
-		return true;
+		return db;
 	}
 	
 	private static TagDictionary readTagDictionaryFromJson(JsonReader reader) throws IOException
@@ -414,11 +481,11 @@ public class DatabaseInterface implements IDatabaseInterface
 	}
 	
 	//TODO belongs here?
-	public void checkVerticality(double tV, double tH, boolean nameOnly) {
+	public void checkActiveVerticality(double tV, double tH, boolean nameOnly) {
 		activeDatabase.checkVerticality(tV, tH, nameOnly);
 	}
 	
-	public List<GImage> getImagesSatisfyingConditions(List<Predicate<IGImage>> conditions) {
+	public List<GImage> getActiveImagesSatisfyingConditions(List<Predicate<IGImage>> conditions) {
 		List<GImage> images = activeDatabase.getImages();
 		List<GImage> res = new ArrayList<>(); 
 		for(GImage image : images) {
