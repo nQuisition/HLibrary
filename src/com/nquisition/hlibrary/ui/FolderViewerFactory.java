@@ -473,6 +473,60 @@ public class FolderViewerFactory extends AbstractGUIFactory {
 	        HLibrary.getUIManager().getUIHelper().showImagesWithTags(tagInput.getText());
 	    }
 	    
+	  //TODO move
+	    public void copyFavs()
+	    {
+	        String location = "G:\\New Folder (3)\\";
+	        int counter = 0;
+	        ArrayList<Process> procs = new ArrayList<>();
+	        for(GImage img : dbInterface.getActiveImages())
+	        {
+	            if(!img.hasTag("fav"))
+	                continue;
+	            
+	            String prefix = getPrefix(counter);
+	            counter++;
+	            if(img.hasTag("vertical"))
+	                prefix = "末vert_" + prefix;
+	            
+	            File src = new File(img.getFullPath());
+	            File dest = new File(location + prefix + img.getName());
+	            try
+	            {
+	            	org.apache.commons.io.FileUtils.copyFile(src, dest);
+	                
+	                if(img.hasTag("vertical"))
+	                {
+	                    /*while(procs.size() >= NUM_PROCESSES)
+	                    {
+	                        Iterator<Process> iter = procs.iterator();
+	                        while (iter.hasNext())
+	                        {
+	                            Process p = iter.next();
+	                            if(!p.isAlive())
+	                            {
+	                                p = null;
+	                                iter.remove();
+	                            }
+	                        }
+	                        Thread.sleep(10);
+	                    }
+	                    Process p = rotateImageEx(location, prefix + img.getName(), false);
+	                    if(p != null)
+	                        procs.add(p);*/
+	                }
+	            }
+	            catch(IOException e)
+	            {
+	                e.printStackTrace();
+	            }
+	            /*catch(InterruptedException e)
+	            {
+	                
+	            }*/
+	        }
+	    }
+	    
 	    //TODO move
 	    private String getPrefix(int c)
 	    {

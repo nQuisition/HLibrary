@@ -124,6 +124,14 @@ public class Gallery
         return getCurrent();
     }
     
+    public Image navigateTo(int num)
+    {
+        if(images.size() <= 0 || num < 0 || num >= images.size())
+            return null;
+        curimg = num;
+        return getCurrent();
+    }
+    
     public Image jumpFolder(boolean forward, boolean fav)
     {
         if(images.size() <= 0)
@@ -202,6 +210,15 @@ public class Gallery
             }
         }
         return -1;
+    }
+    
+    public Map<GImage, Integer> getFavs() {
+    	Map<GImage, Integer> res = new HashMap<>();
+    	for(int i = 0; i < images.size(); i++) {
+    		if(images.get(i).hasTag("fav"))
+    			res.put(images.get(i), i);
+    	}
+    	return res;
     }
     
     public String getCurrentComment()

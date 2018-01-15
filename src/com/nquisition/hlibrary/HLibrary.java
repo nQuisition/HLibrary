@@ -167,20 +167,6 @@ public class HLibrary extends Application implements PropertyProvider
 			}
         });*/
         
-        /*File gifFolder = new File("D:\\temp1\\");
-        File[] list = gifFolder.listFiles();
-        List<GImage> gifs = new ArrayList<>();
-        for(File file : list) {
-        	if(file.isDirectory() || !file.getName().endsWith(".gif"))
-        		continue;
-        	gifs.add(new GImage(file.getAbsolutePath()));
-        }
-        Gallery gal = new Gallery(dbInterface.getActiveDatabase());
-        gal.addImages(gifs);
-        Map<String, Object> galParams = new HashMap<>();
-        galParams.put("gallery", gal);
-        UIView gw = HLibrary.getUIManager().buildFromFactory("GalleryViewer", galParams, false);
-        gw.show();*/
         
         //FIXME REMOVE!
         /*else if(params.size() > 0 && params.get(0).equals("-fix2")) {

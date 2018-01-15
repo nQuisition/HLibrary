@@ -3,6 +3,7 @@ package com.nquisition.hlibrary.ui;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,6 +25,7 @@ import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.DatabaseInterface;
 import com.nquisition.hlibrary.model.GImage;
 import com.nquisition.hlibrary.model.Gallery;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -45,6 +47,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -107,6 +110,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    private TaggingOverlay taggingOverlay;
 	    private InfoOverlay infoOverlay;
 	    private SideMenu sideMenu;
+	    private ThumbViewer thumbViewer;
 	    
 	    private VBox linkNumBox;
 	    private Rectangle moveIndicator, linkIndicator, folderChangeIndicator;
@@ -204,6 +208,8 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        taggingOverlay.setVisible(false);
 	        sideMenu = new SideMenu();
 	        sideMenu.setVisible(false);
+	        thumbViewer = new ThumbViewer();
+	        thumbViewer.setVisible(true);
 	        
 	        //TODO never added to the scene
 	        consoleTextArea = new HConsoleTextArea(this);
@@ -211,7 +217,8 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        HLibrary.registerListenerWithConsole(consoleTextArea);
 	        
 	        root.getChildren().addAll(imv, moveIndicator, linkIndicator, folderChangeIndicator, 
-	        		taggingOverlay.getPane(), infoOverlay.getPane(), linkNumBox, sideMenu.getPane());
+	        		taggingOverlay.getPane(), infoOverlay.getPane(), linkNumBox, sideMenu.getPane(), 
+	        		thumbViewer.getPane());
 
 	        this.initEventHandlers();
 	        
@@ -226,6 +233,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        taggingOverlay.initEventHandlers();
 	        infoOverlay.initEventHandlers();
 	        sideMenu.initEventHandlers();
+	        thumbViewer.initEventHandlers();
 	        
 	        tagging.addListener((ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) ->
 	        {
@@ -689,6 +697,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 		        lastload = System.currentTimeMillis();
 		        this.resetImage(true, false);
 	    	}
+	    	thumbViewer.initFrames();
 	    }
 	    
 	    public void move(int x, int y, int step)
@@ -757,6 +766,25 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	            return;
 	        
 	        Image im = gal.jump(num);
+	        imv.setImage(im);
+	        
+	        previmg = curimg;
+	        curimg = gal.getCurrentGImage();
+	        if(previmg != null && curimg != null && previmg.getParent() != curimg.getParent())
+	            flashFolderChanged();
+	        
+	        resetImage(true, false);
+	        
+	        lastload = System.currentTimeMillis();
+	    }
+	    
+	    public void navigateTo(int num)
+	    {
+	        long time = System.currentTimeMillis();
+	        if(time < lastload + throttling)
+	            return;
+	        
+	        Image im = gal.navigateTo(num);
 	        imv.setImage(im);
 	        
 	        previmg = curimg;
@@ -1483,6 +1511,100 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    	public void setVisible(boolean visible)
 	    	{
 	    		menuPane.setVisible(visible);
+	    	}
+	    }
+	    
+	    private class ThumbViewer {
+	    	private StackPane thumbPane;
+	    	Map<GImage, Integer> favs;
+	    	List<HImageFrame> frames;
+	    	
+	    	private HBox thumbBox;
+	    	
+	    	public ThumbViewer() {
+	    		
+	    		//*-------------------------------------------------
+	    		//* THUMB VIEWER
+	    		//*-------------------------------------------------
+	    		
+	    		thumbBox = new HBox();
+	    		thumbBox.setBackground(styleSheet.getMenuBackground());
+	    		thumbBox.setBorder(styleSheet.getMenuBorder());
+	    		thumbBox.setPrefHeight(250);
+	    		ScrollPane sp = new ScrollPane();
+	    		sp.setContent(thumbBox);
+	    		sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+	    		sp.setOnScroll(event -> {
+	    		    if(event.getDeltaY() != 0) {
+	    		        sp.setHvalue(sp.getHvalue() - event.getDeltaY());
+	    		    }
+	    		});
+	    		
+	    		//TODO better way to stop the menu from taking the whole height?
+	    		VBox thumbBoxBottomDummy = new VBox();
+	    		thumbBoxBottomDummy.setPrefHeight(height-250);
+	    		VBox thumbBoxWrapper = new VBox();
+	    		thumbBoxWrapper.setPrefWidth(width);
+	    		thumbBoxWrapper.getChildren().addAll(sp, thumbBoxBottomDummy);
+	    		
+	    		//*-------------------------------------------------
+	    		//* PARENT PANE
+	    		//*-------------------------------------------------
+	    		
+	    		thumbPane = new StackPane();
+	    		StackPane.setAlignment(thumbBoxWrapper, Pos.TOP_CENTER);
+	    		thumbPane.getChildren().addAll(thumbBoxWrapper);
+	    		thumbPane.setPickOnBounds(false);
+	    	}
+	    	
+	    	public void initFrames() {
+	    		System.out.println("Starting");
+	    		favs = gal.getFavs();
+	    		System.out.println("Got favs");
+	    		int thumbSize = 180;
+	    		
+	    		frames = new ArrayList<>();
+	    		
+	    		int count = 0;
+	    		ArrayList<Entry<GImage, Integer>> favsList = new ArrayList<>();
+	    		favsList.addAll(favs.entrySet());
+	    		favsList.sort((a,b) -> Integer.compare(a.getValue(), b.getValue()));
+	    		for(Entry<GImage, Integer> entry : favsList) {
+	    			HImageFrame frame = new HImageFrame(entry.getKey(), entry.getValue(), thumbSize);
+	    			frame.setBorderVisible(true);
+	    			frame.setOnMouseClicked(event -> {
+	    				navigateTo(frame.getGalPos());
+	    			});
+	    			frames.add(frame);
+	    			count++;
+	    			if(count > 100) break;
+	    		}
+	    		
+	    		System.out.println("Made List");
+	    		
+	    		thumbBox.getChildren().addAll(frames);
+	    		
+	    		System.out.println("Done");
+	    	}
+	    	
+	    	public void initEventHandlers() {
+	    		//Prevent clicked events from going through to elements below
+	    		thumbBox.setOnMouseClicked(mevent -> {
+	    			mevent.consume();
+	    		});
+	    		
+	    		//Prevent the menu from disappearing if it is still being moused over
+	    		thumbBox.setOnMouseMoved(mevent -> {
+	    			mevent.consume();
+	    		});
+	    	}
+	    	
+	    	public Parent getPane() {
+	    		return thumbPane;
+	    	}
+	    	
+	    	public void setVisible(boolean visible) {
+	    		thumbPane.setVisible(visible);
 	    	}
 	    }
 	}
