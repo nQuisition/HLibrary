@@ -101,7 +101,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    //TODO move to UI control
 	    private HStyleSheet styleSheet = new HStyleSheet();
 	    
-	    private Gallery gal;
+	    private Gallery gal = null;
 	    private ImageView imv;
 	    private Text linkNum;
 	    
@@ -136,6 +136,8 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    private BooleanProperty limitToFav = new SimpleBooleanProperty(false);
 	    
 	    private IntegerProperty curRating = new SimpleIntegerProperty(0);
+	    
+	    private IntegerProperty curImage = new SimpleIntegerProperty(-1);
 	    
 	    private DatabaseInterface dbInterface;
 	    
@@ -209,7 +211,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        sideMenu = new SideMenu();
 	        sideMenu.setVisible(false);
 	        thumbViewer = new ThumbViewer();
-	        thumbViewer.setVisible(true);
+	        thumbViewer.setVisible(false);
 	        
 	        //TODO never added to the scene
 	        consoleTextArea = new HConsoleTextArea(this);
@@ -463,6 +465,11 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	            	sideMenu.setVisible(true);
 	            else
 	            	sideMenu.setVisible(false);
+	            
+	            if(y < 250)
+	            	thumbViewer.setVisible(true);
+	            else
+	            	thumbViewer.setVisible(false);
 	        });
 	    }
 	    
@@ -675,28 +682,32 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    {
 	        gal.rotateImage(left);
 	        gal.invertOrientationTag();
-	        imv.setImage(gal.reloadImage());
+	        gal.reloadImage();
 	        resetImage(false, true);
-	    }
-	    
-	    public void setGallery(Gallery g)
-	    {
-	        gal = g;
-	        imv.setImage(gal.getNext(false));
-	        lastload = System.currentTimeMillis();
-	        this.resetImage(true, false);
 	    }
 	    
 	    public void setGallery(Gallery g, String fname)
 	    {
-	    	if(fname == null)
-	    		setGallery(g);
-	    	else {
-		        gal = g;
-		        imv.setImage(gal.getByName(fname));
-		        lastload = System.currentTimeMillis();
-		        this.resetImage(true, false);
-	    	}
+	    	if(gal != null)
+	    		return;
+		    gal = g;
+		    gal.bindToCurrentImageProperty(curImage);
+		    curImage.addListener((o, oldValue, newValue) -> {
+		    	if(newValue.intValue() == -1)
+		    		return;
+		    	imv.setImage(gal.getCurrent());
+		    	previmg = curimg;
+		        curimg = gal.getCurrentGImage();
+		        if(previmg != null && curimg != null && previmg.getParent() != curimg.getParent())
+		            flashFolderChanged();
+		    });
+		    if(fname == null)
+		    	gal.getNext(false);
+		    else
+		    	gal.getByName(fname);
+		    lastload = System.currentTimeMillis();
+		    this.resetImage(true, false);
+	    	
 	    	thumbViewer.initFrames();
 	    }
 	    
@@ -765,14 +776,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        if(time < lastload + throttling)
 	            return;
 	        
-	        Image im = gal.jump(num);
-	        imv.setImage(im);
-	        
-	        previmg = curimg;
-	        curimg = gal.getCurrentGImage();
-	        if(previmg != null && curimg != null && previmg.getParent() != curimg.getParent())
-	            flashFolderChanged();
-	        
+	        gal.jump(num);
 	        resetImage(true, false);
 	        
 	        lastload = System.currentTimeMillis();
@@ -784,14 +788,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        if(time < lastload + throttling)
 	            return;
 	        
-	        Image im = gal.navigateTo(num);
-	        imv.setImage(im);
-	        
-	        previmg = curimg;
-	        curimg = gal.getCurrentGImage();
-	        if(previmg != null && curimg != null && previmg.getParent() != curimg.getParent())
-	            flashFolderChanged();
-	        
+	        gal.navigateTo(num);
 	        resetImage(true, false);
 	        
 	        lastload = System.currentTimeMillis();
@@ -803,14 +800,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        if(time < lastload + throttling)
 	            return;
 	        
-	        Image im = gal.jumpFolder(forward, limitToFav.get());
-	        imv.setImage(im);
-	        
-	        previmg = curimg;
-	        curimg = gal.getCurrentGImage();
-	        if(previmg != null && curimg != null && previmg.getParent() != curimg.getParent())
-	            flashFolderChanged();
-	        
+	        gal.jumpFolder(forward, limitToFav.get());
 	        resetImage(true, false);
 	        
 	        lastload = System.currentTimeMillis();
@@ -822,8 +812,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        if(time < lastload + throttling)
 	            return;
 	        
-	        Image im = gal.jumpOrientationWithinFolder();
-	        imv.setImage(im);
+	        gal.jumpOrientationWithinFolder();
 	        resetImage(true, false);
 	        
 	        lastload = System.currentTimeMillis();
@@ -835,14 +824,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        if(time < lastload + throttling)
 	            return;
 	        
-	        Image im = gal.getNext(limitToFav.get());
-	        imv.setImage(im);
-	        
-	        previmg = curimg;
-	        curimg = gal.getCurrentGImage();
-	        if(previmg != null && curimg != null && previmg.getParent() != curimg.getParent())
-	            flashFolderChanged();
-	        
+	        gal.getNext(limitToFav.get());
 	        resetImage(true, false);
 	        
 	        lastload = System.currentTimeMillis();
@@ -854,14 +836,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	        if(time < lastload + throttling)
 	            return;
 	        
-	        Image im = gal.getPrev(limitToFav.get());
-	        imv.setImage(im);
-	        
-	        previmg = curimg;
-	        curimg = gal.getCurrentGImage();
-	        if(previmg != null && curimg != null && previmg.getParent() != curimg.getParent())
-	            flashFolderChanged();
-	        
+	        gal.getPrev(limitToFav.get());
 	        resetImage(true, false);
 	        
 	        lastload = System.currentTimeMillis();
@@ -1520,6 +1495,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    	List<HImageFrame> frames;
 	    	
 	    	private HBox thumbBox;
+	    	private ScrollPane sp;
 	    	
 	    	public ThumbViewer() {
 	    		
@@ -1531,7 +1507,7 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    		thumbBox.setBackground(styleSheet.getMenuBackground());
 	    		thumbBox.setBorder(styleSheet.getMenuBorder());
 	    		thumbBox.setPrefHeight(250);
-	    		ScrollPane sp = new ScrollPane();
+	    		sp = new ScrollPane();
 	    		sp.setContent(thumbBox);
 	    		sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 	    		sp.setOnScroll(event -> {
@@ -1565,7 +1541,6 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    		
 	    		frames = new ArrayList<>();
 	    		
-	    		int count = 0;
 	    		ArrayList<Entry<GImage, Integer>> favsList = new ArrayList<>();
 	    		favsList.addAll(favs.entrySet());
 	    		favsList.sort((a,b) -> Integer.compare(a.getValue(), b.getValue()));
@@ -1576,8 +1551,6 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    				navigateTo(frame.getGalPos());
 	    			});
 	    			frames.add(frame);
-	    			count++;
-	    			if(count > 100) break;
 	    		}
 	    		
 	    		System.out.println("Made List");
@@ -1589,12 +1562,12 @@ public class GalleryViewerFactory extends AbstractGUIFactory {
 	    	
 	    	public void initEventHandlers() {
 	    		//Prevent clicked events from going through to elements below
-	    		thumbBox.setOnMouseClicked(mevent -> {
+	    		sp.setOnMouseClicked(mevent -> {
 	    			mevent.consume();
 	    		});
 	    		
 	    		//Prevent the menu from disappearing if it is still being moused over
-	    		thumbBox.setOnMouseMoved(mevent -> {
+	    		sp.setOnMouseMoved(mevent -> {
 	    			mevent.consume();
 	    		});
 	    	}

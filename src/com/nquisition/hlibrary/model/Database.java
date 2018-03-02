@@ -541,6 +541,29 @@ public class Database
         }
     }
     
+    public void rescan() {
+    	ArrayList<GFolder> folders = this.getFolders();
+    	for(GFolder folder : folders) {
+    		List<GImage> images = folder.getImages();
+    		String path = folder.getPath();
+    		File dir = new File(path);
+    		File[] list = dir.listFiles();
+    		List<String> matches = new ArrayList<>(); 
+    		for(File f : list) {
+    			String name = f.getName().toLowerCase();
+    			if(!(name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".jpeg")))
+    				continue;
+    			boolean res = images.stream().filter(img -> img.getName().equalsIgnoreCase(name)).findFirst().isPresent();
+    			if(!res) {
+    				matches.add(name);
+    			}
+    		}
+    		if(matches.size() > 0) {
+    			System.out.println(path + " :: " + matches.size());
+    		}
+    	}
+    }
+    
     public void purgeDatabase() throws IOException
     {
         Iterator<GFolder> j = folders.iterator();

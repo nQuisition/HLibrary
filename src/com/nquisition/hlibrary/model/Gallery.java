@@ -10,6 +10,9 @@ import java.util.*;
 import org.apache.logging.log4j.core.util.NameUtil;
 
 import java.io.*;
+
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.image.*;
 import java.text.*;
 
@@ -20,7 +23,9 @@ import java.text.*;
 public class Gallery
 {
     private List<GImage> images;
-    private int curimg = -1;
+    private IntegerProperty curimg = new SimpleIntegerProperty(-1) {
+    	
+    };
     private int numcache = 2;
     private List<GImage> cached = new ArrayList<>();
     
@@ -68,75 +73,79 @@ public class Gallery
         return startPos;
     }
     
-    public Image getByName(String fname)
+    public void getByName(String fname)
     {
-        curimg = 0;
+        int index = 0;
         for(int i = 0; i < images.size(); i++)
             if(images.get(i).getName().equalsIgnoreCase(fname))
             {
-                curimg = i;
+                index = i;
                 break;
             }
-        return getCurrent();
+        curimg.set(index);
+        //return getCurrent();
     }
     
-    public Image getNext(boolean fav)
+    public void getNext(boolean fav)
     {
         if(images.size() <= 0)
-            return null;
+            return;
         if(images.size() <= 0)
-            return null;
+            return;
         if(fav)
-            curimg = this.nextIndexWithTag(curimg, "fav", false);
+            curimg.set(this.nextIndexWithTag(curimg.get(), "fav", false));
         else
         {
-            curimg++;
-            if(curimg >= images.size())
-                curimg = 0;
+        	int index = curimg.get()+1;
+            if(index >= images.size())
+            	index = 0;
+            curimg.set(index);
         }
-        return getCurrent();
+        //return getCurrent();
     }
     
-    public Image getPrev(boolean fav)
+    public void getPrev(boolean fav)
     {
         if(images.size() <= 0)
-            return null;
+            return;
         if(fav)
-            curimg = this.prevIndexWithTag(curimg, "fav", false);
+            curimg.set(this.prevIndexWithTag(curimg.get(), "fav", false));
         else
         {
-            curimg--;
-            if(curimg < 0)
-                curimg = images.size()-1;
+        	int index = curimg.get()-1;
+            if(index < 0)
+            	index = images.size()-1;
+            curimg.set(index);
         }
-        return getCurrent();
+        //return getCurrent();
     }
     
-    public Image jump(int num)
+    public void jump(int num)
     {
         if(images.size() <= 0)
-            return null;
-        curimg += num;
-        while(curimg < 0)
-            curimg = curimg + images.size();
-        while(curimg >= images.size())
-            curimg = curimg - images.size();
-        return getCurrent();
+            return;
+        int index = curimg.get() + num;
+        while(index < 0)
+        	index = index + images.size();
+        while(index >= images.size())
+        	index = index - images.size();
+        curimg.set(index);
+        //return getCurrent();
     }
     
-    public Image navigateTo(int num)
+    public void navigateTo(int num)
     {
         if(images.size() <= 0 || num < 0 || num >= images.size())
-            return null;
-        curimg = num;
-        return getCurrent();
+            return;
+        curimg.set(num);
+        //return getCurrent();
     }
     
-    public Image jumpFolder(boolean forward, boolean fav)
+    public void jumpFolder(boolean forward, boolean fav)
     {
         if(images.size() <= 0)
-            return null;
-        int ci = curimg;
+            return;
+        int ci = curimg.get();
         GFolder f = images.get(ci).getParent();
         int size = images.size();
         for(int i = 1; i < size; i++)
@@ -145,9 +154,10 @@ public class Gallery
             {
                 if(f != images.get((ci+i)>=size?ci+i-size:ci+i).getParent())
                 {
-                    curimg = (ci+i)>=size?ci+i-size:ci+i;
+                    int index = (ci+i)>=size?ci+i-size:ci+i;
                     if(fav)
-                        curimg = this.nextIndexWithTag(curimg, "fav", true);
+                        index = this.nextIndexWithTag(curimg.get(), "fav", true);
+                    curimg.set(index);
                     break;
                 }
             }
@@ -160,32 +170,32 @@ public class Gallery
                     {
                         pos = this.prevIndexWithTag(pos, "fav", true);
                     }
-                    curimg = rewindFolder(pos, fav);
+                    curimg.set(rewindFolder(pos, fav));
                     break;
                 }
             }
         }
-        return getCurrent();
+        //return getCurrent();
     }
     
-    public Image jumpOrientationWithinFolder()
+    public void jumpOrientationWithinFolder()
     {
         if(images.size() <= 0)
-            return null;
-        GFolder f = this.images.get(curimg).getParent();
-        int ci = curimg;
+            return;
+        GFolder f = this.images.get(curimg.get()).getParent();
+        int ci = curimg.get();
         int size = this.images.size();
-        String targetOrientation = this.images.get(curimg).hasTag("vertical")?"horizontal":"vertical";
+        String targetOrientation = this.images.get(curimg.get()).hasTag("vertical")?"horizontal":"vertical";
         for(int i = 1; i < size; i++)
         {
             int pos = (ci+i)>=size?ci+i-size:ci+i;
             if(images.get(pos).hasTag(targetOrientation) && f == images.get(pos).getParent())
             {
-                curimg = pos;
+                curimg.set(pos);
                 break;
             }
         }
-        return getCurrent();
+        //return getCurrent();
     }
     
     public int rewindFolder(int pos, boolean fav)
@@ -223,9 +233,9 @@ public class Gallery
     
     public String getCurrentComment()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return "";
-        String res = images.get(curimg).getComment();
+        String res = images.get(curimg.get()).getComment();
         if(res == null)
             res = "";
         return res;
@@ -233,34 +243,34 @@ public class Gallery
     
     public void setCurrentComment(String c)
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
         if(c.equals(""))
-            images.get(curimg).setComment(null);
+            images.get(curimg.get()).setComment(null);
         else
-            images.get(curimg).setComment(c);
+            images.get(curimg.get()).setComment(c);
     }
     
     public void currentImageViewed()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
-        images.get(curimg).setViewedNow();
+        images.get(curimg.get()).setViewedNow();
         //TODO increase viewcount here
     }
     
     public void currentImageModified()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
-        images.get(curimg).setLastmodNow();
+        images.get(curimg.get()).setLastmodNow();
     }
     
     public String getAdded()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return "";
-        long v = images.get(curimg).getAdded();
+        long v = images.get(curimg.get()).getAdded();
         if(v < 0)
             return "ERROR";
         Date resultdate = new Date(v);
@@ -269,9 +279,9 @@ public class Gallery
     
     public String getViewed()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return "";
-        long v = images.get(curimg).getViewed();
+        long v = images.get(curimg.get()).getViewed();
         if(v < 0)
             return "Never";
         Date resultdate = new Date(v);
@@ -280,9 +290,9 @@ public class Gallery
     
     public String getLastmod()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return "";
-        long m = images.get(curimg).getLastmod();
+        long m = images.get(curimg.get()).getLastmod();
         if(m < 0)
             return "Never";
         Date resultdate = new Date(m);
@@ -291,10 +301,10 @@ public class Gallery
     
     public Image getCurrent()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return null;
-        Image res = images.get(curimg).cload();
-        cached.add(images.get(curimg));
+        Image res = images.get(curimg.get()).cload();
+        cached.add(images.get(curimg.get()));
         if(cached.size()>numcache)
             cacheRemoveFurthest();
         return res;
@@ -304,9 +314,9 @@ public class Gallery
     //GImage objects to viewer?
     public GImage getCurrentGImage()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return null;
-        return images.get(curimg);
+        return images.get(curimg.get());
     }
     
     /**
@@ -336,17 +346,17 @@ public class Gallery
     
     public int linkToCurrent(GImage img)
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return -1000;
-        GImage cur = images.get(curimg);
+        GImage cur = images.get(curimg.get());
         return linkTo(img, cur);
     }
     
     public int moveAfterCurrent(GImage img)
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return -1000;
-        GImage cur = images.get(curimg);
+        GImage cur = images.get(curimg.get());
         //TODO allow moving even though different folders?
         if(cur.getParent() != img.getParent())
             return 1;
@@ -387,18 +397,18 @@ public class Gallery
     
     public String getCurrentNameFull()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return "";
-        GImage current = images.get(curimg);
+        GImage current = images.get(curimg.get());
         return (current.getParent()==null)?current.getName():
                 current.getParent().getPath()+current.getName();
     }
     
     public String getCurrentName()
     {
-    	if(curimg < 0 || images.size() <= 0)
+    	if(curimg.get() < 0 || images.size() <= 0)
             return "";
-    	return images.get(curimg).getName();
+    	return images.get(curimg.get()).getName();
     }
     
     /**
@@ -407,9 +417,9 @@ public class Gallery
      */
     public String[] getCurrentNameFullPiecewise()
     {
-    	if(curimg < 0 || images.size() <= 0)
+    	if(curimg.get() < 0 || images.size() <= 0)
             return new String[]{"", ""};
-    	GImage current = images.get(curimg);
+    	GImage current = images.get(curimg.get());
     	GFolder topParent = current.getTopLevelParent();
     	int num = current.isOnTopLevel() ? 2 : 3;
     	String[] res = new String[num];
@@ -440,16 +450,20 @@ public class Gallery
         return images.size();
     }
     
+    @Deprecated
+    //Listen to curimg instead!
     public int getCurrentPosition()
     {
-        return curimg;
+        return curimg.get();
     }
     
+    @Deprecated
+    //Listen to curimg instead??
     public int getCurrentPositionWithinFolder()
     {
     	//TODO better way?
-    	GFolder curFolder = images.get(curimg).getParent();
-    	int index = curimg;
+    	GFolder curFolder = images.get(curimg.get()).getParent();
+    	int index = curimg.get();
     	while(true)
     	{
     		index--;
@@ -460,16 +474,18 @@ public class Gallery
     			break;*/
     		if(images.get(index).getParent() != curFolder)
     			//return curimg > index ? curimg-index : curimg + images.size() - index;
-    			return curimg-index-1;
+    			return curimg.get()-index-1;
     	}
-    	return curimg;
+    	return curimg.get();
     }
     
+    @Deprecated
+    //Listen to curimg instead??
     public int getCurrentFolderSize()
     {
     	//TODO better way?
-    	GFolder curFolder = images.get(curimg).getParent();
-    	int index = curimg;
+    	GFolder curFolder = images.get(curimg.get()).getParent();
+    	int index = curimg.get();
     	int start = 0;
     	while(true)
     	{
@@ -484,7 +500,7 @@ public class Gallery
     			break;
     		}
     	}
-    	index = curimg;
+    	index = curimg.get();
     	while(true)
     	{
     		index++;
@@ -498,28 +514,28 @@ public class Gallery
     	return index-start;
     }
     
-    public void setTags(ArrayList<String> t)
+    public void setTags(List<String> t)
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
-        images.get(curimg).setTags(t, true);
+        images.get(curimg.get()).setTags(t, true);
     }
     
-    public Image removeCurrent()
+    /*public Image removeCurrent()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return null;
         images.remove(curimg);
         if(curimg >= images.size())
             curimg = images.size()-1;
         return getCurrent();
-    }
+    }*/
     
     public String getTagString()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return "";
-        List<String> tags = images.get(curimg).getTags();
+        List<String> tags = images.get(curimg.get()).getTags();
         String res = "";
         for(String tag : tags)
             res += tag + " ";
@@ -528,9 +544,9 @@ public class Gallery
     
     public void invertOrientationTag()
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
-        GImage cur = images.get(curimg);
+        GImage cur = images.get(curimg.get());
         if(cur.hasTag("mixed"))
         {
             cur.dropTag("mixed");
@@ -552,12 +568,12 @@ public class Gallery
     
     public void addTagToCurrent(String tag, boolean toggle)
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
-        if(toggle && images.get(curimg).hasTag(tag))
-            images.get(curimg).dropTag(tag);
+        if(toggle && images.get(curimg.get()).hasTag(tag))
+            images.get(curimg.get()).dropTag(tag);
         else
-            images.get(curimg).addTag(tag, true);
+            images.get(curimg.get()).addTag(tag, true);
     }
     
     public void favCurrent(boolean toggle)
@@ -572,38 +588,45 @@ public class Gallery
     
     public int getCurrentRating()
     {
-    	if(curimg < 0 || images.size() <= 0 || images.get(curimg).getParent() == null)
+    	if(curimg.get() < 0 || images.size() <= 0 || images.get(curimg.get()).getParent() == null)
             return -1;
-    	return images.get(curimg).getParent().getRating();
+    	return images.get(curimg.get()).getParent().getRating();
     }
     
     public void rateCurrentFolder(int r)
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
         //TODO yeeeeeeea...
         for(int i = 0; i <= 5; i++)
-            if(images.get(curimg).getParent().hasTag(String.valueOf(i)))
+            if(images.get(curimg.get()).getParent().hasTag(String.valueOf(i)))
             {
-                images.get(curimg).getParent().dropTag(String.valueOf(i));
+                images.get(curimg.get()).getParent().dropTag(String.valueOf(i));
                 break;
             }
-        images.get(curimg).getParent().addTag(String.valueOf(r), true);
+        images.get(curimg.get()).getParent().addTag(String.valueOf(r), true);
     }
     
     //TODO doesn't belong here?
     public void rotateImage(boolean left)
     {
-        if(curimg < 0 || images.size() <= 0)
+        if(curimg.get() < 0 || images.size() <= 0)
             return;
-        images.get(curimg).rotate(left, -20);
+        images.get(curimg.get()).rotate(left, -20);
     }
     
-    public Image reloadImage()
+    public void reloadImage()
     {
-        if(curimg < 0 || images.size() <= 0)
-            return null;
-        images.get(curimg).unload();
-        return images.get(curimg).cload();
+        if(curimg.get() < 0 || images.size() <= 0)
+            return;
+        images.get(curimg.get()).unload();
+        //FIXME ugly hack
+        int index = curimg.get();
+        curimg.set(-1);
+        curimg.set(index);
+    }
+    
+    public void bindToCurrentImageProperty(IntegerProperty prop) {
+    	prop.bind(curimg);
     }
 }
