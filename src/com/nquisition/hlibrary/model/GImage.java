@@ -304,7 +304,7 @@ public class GImage extends GEntry implements IGImage
     public int differenceFrom(GImage img, int threshold, boolean orientation)
     {
         int res = 0;
-        if(similarityBytes == null)
+        if(similarityBytes == null || img == null)
             return -1;
         for(int i = 0; i < RESOLUTION*RESOLUTION; i++)
         {
@@ -419,7 +419,7 @@ public class GImage extends GEntry implements IGImage
     
     public void rotate(boolean left, int sleepTime)
     {
-        String cname = FileUtils.renameImage(parent==null?"":parent.getPath(), name, left);
+        String cname = FileUtils.renameImageBasedOnVerticality(parent==null?"":parent.getPath(), name, left);
         setName(cname);
         
         int res = FileUtils.rotateImage(parent==null?"":parent.getPath(), name, left, sleepTime);

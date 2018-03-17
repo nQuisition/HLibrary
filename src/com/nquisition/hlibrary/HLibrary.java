@@ -21,6 +21,7 @@ import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.console.HConsole;
 import com.nquisition.hlibrary.console.HConsoleAppender;
 import com.nquisition.hlibrary.console.IConsoleListener;
+import com.nquisition.hlibrary.dev.Tests;
 import com.nquisition.hlibrary.exh.EXHPlugin;
 import com.nquisition.hlibrary.ui.DefaultUIManager;
 import com.nquisition.hlibrary.ui.HConsoleStage;
@@ -86,11 +87,23 @@ public class HLibrary extends Application implements PropertyProvider
         }
         instance = this;
         
+        Tests tests = null;
+        
+        if(!params.isEmpty() && params.get(0).equals("-test")) {
+        	tests = new Tests();
+        	if(!tests.runPreLoad()) {
+        		logger.fatal("Preload tests failed!");
+                pressEnterToContinue();
+                Platform.exit();
+                System.exit(-1);
+        	}
+        }
+        
         console = new HConsole();
         HConsoleAppender.setHConsole(console);
         
         logger.info("-------------------------");
-        String cfgFolder = FileUtils.toProperFolderPath(System.getProperty("user.home")) + "HLibrary\\";
+        String cfgFolder = FileUtils.toProperPath(System.getProperty("user.home")) + "HLibrary\\";
         if(!new File(cfgFolder).exists()) {
         	//TODO init config
         }
@@ -145,156 +158,20 @@ public class HLibrary extends Application implements PropertyProvider
         for(BasePlugin plugin : plugins)
         	plugin.start();
         
+        if(!params.isEmpty() && params.get(0).equals("-test")) {
+        	if(!tests.runPostLoad()) {
+        		logger.fatal("Postload tests failed!");
+                pressEnterToContinue();
+                Platform.exit();
+                System.exit(-1);
+        	}
+        }
+        
         int count = 0;
         for(GImage img : dbInterface.getActiveImages())
         	if(img.getSimilarityString() != null)
         		count++;
         System.out.println(count + "/" + dbInterface.getActiveImages().size());
-        
-        //TODO need something like this for TaskManager
-        /*ExecutorService es = Executors.newSingleThreadExecutor ();
-        es.submit(dbInterface.computeSimilarityStrings());
-        Future<Map<GImage, List<GImage>>> similars = es.submit(dbInterface.findSimilarImages(1000));
-        es.submit(() -> {
-        	try {
-        		Map<GImage, List<GImage>> map = similars.get();
-        		Platform.runLater(() -> {
-        			SimilarityViewer sw = new SimilarityViewer(dbInterface.getActiveDatabase(), map);
-        			sw.show();
-        		});
-        	} catch (Exception e) {
-				e.printStackTrace();
-			}
-        });*/
-
-        
-        
-        //FIXME REMOVE!
-        /*else if(params.size() > 0 && params.get(0).equals("-fix2")) {
-        	db = new Database(true);
-            
-            String galroot = Properties.get("galroot");
-            if(!galroot.endsWith("\\"))
-            	galroot = galroot + "\\";
-            String bucketRoot = galroot + "Buckets\\";
-            String resRoot = galroot + "Sorted Results\\";
-            File resFolder = new File(resRoot);
-            if(!resFolder.exists())
-            	resFolder.mkdir();
-            File[] temp = new File(bucketRoot).listFiles();
-            String folderName = null;
-            for(File file : temp) {
-            	if(file.getAbsolutePath().endsWith("bucket_4"))
-            		continue;
-            	if(file.listFiles().length > 0) {
-            		db.addDirectory(file.getAbsolutePath(), 1);
-            		folderName = file.getName();
-            		break;
-            	}
-            }
-            if(folderName == null)
-            	return;
-            final String fldrName = folderName;
-            //db.addDirectory(bucketRoot, 2);
-            db.sortFolders();
-            db.sortImagesByCreated();
-            
-            Gallery gal = new Gallery(db);
-            gal.addImages(db.getImages());
-            GalleryViewer gw = new GalleryViewer(db);
-            gw.setGallery(gal);
-            HLibraryFixer2 hlf2 = new HLibraryFixer2(db);
-            gw.setOnCloseRequest(event -> {
-            	hlf2.process(resRoot, fldrName);
-                logger.info("Closing application");
-                Platform.exit();
-            });
-            gw.show();
-            gw.addKeyEventHandler((key) -> {
-            	if(null!=key.getCode()) switch (key.getCode()) {
-                case Y:
-                	gw.jump(10);
-                	break;
-                case T:
-                	gw.jump(-10);
-                default:
-                	break;
-            	}
-            });
-        }*/
-        
-        /*File file = new File("D:\\temp2\\");
-        File[] list = file.listFiles();
-        for(File f : list) {
-        	if(!f.isDirectory())
-        		continue;
-        	String name = f.getName();
-        	EXHInfo entry = EXHNameParser.parseName(name);
-        	System.out.println(name);
-        	System.out.println(entry.info("\t"));
-        }
-        
-        try {
-        	long time = System.currentTimeMillis();
-        	Map<GImage, List<GImage>> map = db.computeSimilarityStrings();
-        	logger.debug((System.currentTimeMillis()-time)/1000.0d);
-        	SimilarityViewer sw = new SimilarityViewer(db, map);
-            sw.show();
-        } catch(IOException e) {
-        	e.printStackTrace();
-        }*/
-        
-        
-        /*
-        Database db = dbInterface.getActiveDatabase();
-        List<GImage> fullList = db.getImages();
-        int sampleSize = 500;
-        
-        final List<GImage> list = fullList.subList(0, sampleSize);
-        
-        long time = System.currentTimeMillis();
-        for(GImage img : list) {
-        	img.setSimilarityBytes(null);
-        	try {
-        		img.computeSimilarity();
-        	} catch (IOException e) {
-    			e.printStackTrace();
-    		}
-        }
-        logger.debug((System.currentTimeMillis() - time)/1000.0d);
-        time = System.currentTimeMillis();
-        list.stream().parallel().forEach((img) -> {
-        	img.setSimilarityBytes(null);
-        	try {
-				img.computeSimilarity();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        });
-        logger.debug((System.currentTimeMillis() - time)/1000.0d);
-        time = System.currentTimeMillis();
-        ForkJoinPool forkJoinPool = new ForkJoinPool(2);
-
-        try {
-	        forkJoinPool.submit(() -> 
-	        	list.stream().parallel().forEach((img) -> {
-		        	img.setSimilarityBytes(null);
-		        	try {
-						img.computeSimilarity();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-		        })
-	        ).get();
-        } catch(ExecutionException e) {
-			e.printStackTrace();
-		} catch(InterruptedException e) {
-			
-		}
-        logger.debug((System.currentTimeMillis() - time)/1000.0d);
-        */
     }
     
     public void startGlobal(String cfgFolder) {
@@ -524,6 +401,11 @@ public class HLibrary extends Application implements PropertyProvider
     
     public static HCustomPropertiesManager getPropManager() {
     	return instance.propertiesManager;
+    }
+    
+    //TODO remove?
+    public static DatabaseInterface getDBInterface() {
+    	return instance.dbInterface;
     }
     
     private static void pressEnterToContinue()

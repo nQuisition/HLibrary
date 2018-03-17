@@ -12,7 +12,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-public class HImageFrame extends StackPane
+final class HImageFrame extends StackPane
 {
 	private int thumbSize;
 	private int galPos;

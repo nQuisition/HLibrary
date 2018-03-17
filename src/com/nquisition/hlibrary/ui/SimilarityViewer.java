@@ -181,21 +181,25 @@ public class SimilarityViewer extends HConsoleStage
     	counter.setText((pos+1) + "/" + indices.size());
     	rightCounter.setText((rightPos+1) + "/" + images.get(indices.get(pos)).size());
     	GImage leftImage = indices.get(pos);
-    	GImage rightImage = images.get(indices.get(pos)).get(rightPos);
+    	GImage rightImage = images.get(indices.get(pos)).size()>0?images.get(indices.get(pos)).get(rightPos):null;
     	original.setImage(leftImage.cload());
-    	similar.setImage(rightImage.cload());
+    	similar.setImage(rightImage!=null?rightImage.cload():null);
     	setSimilarityImage(leftImage, originalHistogram);
     	setSimilarityImage(rightImage, similarHistogram);
     	originalName.setText(leftImage.getFullPath());
-    	similarName.setText(rightImage.getFullPath());
+    	similarName.setText(rightImage!=null?rightImage.getFullPath():"");
     	int diff = leftImage.differenceFrom(rightImage, -1, false);
-    	double ppDiff = diff/(leftImage.cload().getWidth()*leftImage.cload().getHeight());
+    	double ppDiff = diff/(GImage.RESOLUTION*GImage.RESOLUTION); //(leftImage.cload().getWidth()*leftImage.cload().getHeight());
     	similarityLabel.setText("Difference: " + diff + "(" + ppDiff + "pp);\n w1: "
-    			+ leftImage.getWhiteness() + ", w2: " + rightImage.getWhiteness());
+    			+ leftImage.getWhiteness() + ", w2: " + ((rightImage!=null)?rightImage.getWhiteness():""));
     }
     
     private static void setSimilarityImage(GImage gimg, ImageView imv) {
     	try {
+    		if(gimg == null) {
+    			imv.setImage(null);
+    			return;
+    		}
         	double width, height;
         	Image img  = gimg.cload();
         	double aspectRatio = img.getWidth()/img.getHeight();

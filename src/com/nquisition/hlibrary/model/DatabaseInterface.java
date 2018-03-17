@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -94,6 +95,7 @@ public class DatabaseInterface implements IDatabaseInterface
 		}
 		db.sortFolders();
 		databases.put(fileName, db);
+		logger.info("Loaded \"" + fileName + "\" " + db);
 		if(setAsActive)
 			activeDatabase = db;
         return true;
@@ -196,8 +198,18 @@ public class DatabaseInterface implements IDatabaseInterface
 	}
 	
 	//TODO memory leaks?
-	public Callable<Integer> computeActiveSimilarityStrings() {
-		List<GImage> images = this.getActiveImages(); 
+	public Callable<Integer> computeSimilarityStrings(String dbLocation) {
+		Database db;
+		if(dbLocation == null)
+			db = this.getActiveDatabase();
+		else
+			db = this.getDatabase(dbLocation);
+		if(db == null) {
+			//TODO log, warn etc;
+			return null;
+		}
+
+		List<GImage> images = new ArrayList<>(db.getImages()); 
 		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Computing similarity strings");
 		progressMonitor.start(images.size());
 		
@@ -212,6 +224,7 @@ public class DatabaseInterface implements IDatabaseInterface
 					e.printStackTrace();
 				}
 	        });
+			db.saveDatabase();
 			return 1;
 		};
 		
@@ -235,10 +248,59 @@ public class DatabaseInterface implements IDatabaseInterface
 	}
 	
 	//TODO memory leaks?
+		public Callable<Integer> computeSimilarityStrings(GFolder folder) {
+			List<GImage> images = folder.getImages();
+			ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Computing similarity strings");
+			progressMonitor.start(images.size());
+			
+			//TODO use javafx tasks?
+			return () -> {
+				images.stream().parallel().forEach(img -> {
+		        	//img.setSimilarityBytes(null);
+		        	progressMonitor.add(1);
+		        	try {
+						img.computeSimilarity(false);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+		        });
+				return 1;
+			};
+			
+			/*new Thread() {
+				@Override
+				public void run() {
+					images.stream().parallel().forEach((img) -> {
+			        	//img.setSimilarityBytes(null);
+			        	progressMonitor.add(1);
+			        	int res = count.addAndGet(1);
+			        	if(res % 10 == 0)
+			        		System.out.println(res + "/" + images.size());
+			        	try {
+							img.computeSimilarity(false);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+			        });
+				}
+			}.start();*/
+		}
+	
+	//TODO memory leaks?
 	//TODO compute similarity or leave like this?
 	//Assumes similarity is computed; skips images without similarity info
-	public Callable<Map<GImage, List<GImage>>> findActiveSimilarImages(int threshold) {
-		List<GImage> images = this.getActiveImages();
+	public Callable<Map<GImage, List<GImage>>> findSimilarImages(String dbLocation, int threshold) {
+		Database db;
+		if(dbLocation == null)
+			db = this.getActiveDatabase();
+		else
+			db = this.getDatabase(dbLocation);
+		if(db == null) {
+			//TODO log, warn etc;
+			return null;
+		}
+
+		List<GImage> images = new ArrayList<>(db.getImages()); 
 		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Finding similar images");
 		progressMonitor.start(images.size());
 		
@@ -254,17 +316,82 @@ public class DatabaseInterface implements IDatabaseInterface
 	            		continue;
 	                int diff = img.differenceFrom(images.get(j), threshold, false);
 	                if(diff < threshold && diff >= 0) {
-	                    if(img.getParent() != images.get(j).getParent() || diff == 0) {
+	                    //if(img.getParent() != images.get(j).getParent() || diff == 0) {
 	                    	if(!res.containsKey(img))
 	                    		res.put(img, new ArrayList<>());
 	                    	res.get(img).add(images.get(j));
-	                    }
+	                    //}
 	                }
 	            }
 	        });
 			return res;
 		};
 	}
+	
+	//TODO memory leaks?
+		//TODO compute similarity or leave like this?
+		//Assumes similarity is computed; skips images without similarity info
+		public Callable<Map<GImage, List<GImage>>> findPartitions(String dbLocation, int threshold) {
+			Database db;
+			if(dbLocation == null)
+				db = this.getActiveDatabase();
+			else
+				db = this.getDatabase(dbLocation);
+			if(db == null) {
+				//TODO log, warn etc;
+				return null;
+			}
+
+			List<GImage> images = new ArrayList<>(db.getImages()); 
+			ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Finding similar images");
+			progressMonitor.start(images.size());
+			
+			//TODO detect sketches and ignore them
+			return () -> {
+				Map<GImage, List<GImage>> res = new LinkedHashMap<>();
+				int next = 0;
+				while(true) {
+					if(next >= images.size())
+						break;
+					
+					GImage img = images.get(next);
+					int lastIndex = next;
+					
+					progressMonitor.add(1);
+					if(!res.containsKey(img))
+                		res.put(img, new ArrayList<>());
+					
+					if(next >= images.size()-1)
+						break;
+					
+		            for(int j = next+1; j < images.size(); j++) {
+		            	GImage image2 = images.get(j);
+		            	
+		            	boolean found = false;
+		            	int minDiff = -1;
+		            	for(int k = next; k <= lastIndex; k++) {
+			                int diff = images.get(k).differenceFrom(images.get(j), -1, false);
+			                if(minDiff < 0 || diff < minDiff)
+			                	minDiff = diff;
+			                if(diff < threshold && diff >= 0) {
+			                    //if(img.getParent() != images.get(j).getParent() || diff == 0) {
+			                    	res.get(img).add(images.get(j));
+			                    	found = true;
+			                    	break;
+			                    //}
+			                }
+		            	}
+		            	if(!found) {
+		            		System.out.println("Breaking at " + (j-next) + " with min diff of " + minDiff); 
+		                	next = j;
+		                	break;
+		                }
+		            	lastIndex++;
+		            }
+		        }
+				return res;
+			};
+		}
 	
 	private Database readDatabaseFromJson(String fileName, boolean local)
 	{
