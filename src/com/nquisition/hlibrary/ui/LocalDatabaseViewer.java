@@ -138,10 +138,10 @@ public class LocalDatabaseViewer extends HConsoleStage
                     path = path + "\\";
                 dbInterface.loadDatabase(fl, true);
                 
-                System.out.println(dbInterface.getActiveDatabase().getFolderByName(path).getRating() + " - " + listOfFiles[i].getName());
+                System.out.println(dbInterface.getActiveDatabase().getFolderByPath(path).getRating() + " - " + listOfFiles[i].getName());
                 //System.out.println(path + " :: " + db.getFolderByName(path));
                 
-                res.add(dbInterface.getActiveDatabase().getFolderByName(path).getRating() + " - " + listOfFiles[i].getName());
+                res.add(dbInterface.getActiveDatabase().getFolderByPath(path).getRating() + " - " + listOfFiles[i].getName());
             }
             catch(IOException e)
             {

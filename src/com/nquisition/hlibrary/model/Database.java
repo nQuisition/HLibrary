@@ -40,17 +40,15 @@ public class Database
     public static final transient String FOLDER_END = ">>";
     public static final transient String FOLDER_ROOT = "*";
     
-    //private ArrayList<GImage> images;
-    private ArrayList<GFolder> folders;
+    private List<GFolder> folders;
     //TODO untransient, fix unnecessary info in GImage
-    private transient ArrayList<GImageList> lists;
+    private transient List<GImageList> lists;
     private TagDictionary dict;
     
     private transient String location;
     
     public final void init()
     {
-        //images = new ArrayList<GImage>();
         folders = new ArrayList<>();
         lists = new ArrayList<>();
         dict = new TagDictionary();
@@ -113,18 +111,18 @@ public class Database
     	this.dict = dict;
     }
     
-    public GFolder getFolderByName(String p)
+    public GFolder getFolderByPath(String p)
     {
         for(GFolder f : folders)
         {
-            GFolder res = f.getFolderByName(p, true);
+            GFolder res = f.getFolderByPath(p, true);
             if(res != null)
                 return res;
         }
         return null;
     }
     
-    public boolean folderAlreadyAdded(String path)
+    public boolean isFolderAlreadyAdded(String path)
     {
         for(GFolder f : folders)
         {
@@ -134,7 +132,7 @@ public class Database
         return false;
     }
     
-    public GFolder getRootFolder(String path)
+    public GFolder getRootFolderByPath(String path)
     {
         for(GFolder f : folders)
         {
@@ -159,7 +157,7 @@ public class Database
         if(par != null)
             par.addSubFolder(res);
         
-        ArrayList<String> tagArray = new ArrayList<>();
+        List<String> tagArray = new ArrayList<>();
         if(!params.equalsIgnoreCase(""))
             tagArray = this.processTags(params.split("\\s+"));
         
@@ -182,7 +180,7 @@ public class Database
         GFolder f = null;
         if(par != null)
         {
-            f = par.getFolderByName(path, false);
+            f = par.getFolderByPath(path, false);
             if(f == null)
             {
                 f = new GFolder(path);
@@ -191,14 +189,14 @@ public class Database
         }
         if(root)
         {
-            if(!this.folderAlreadyAdded(path))
+            if(!this.isFolderAlreadyAdded(path))
             {
                 if(par == null)
                     f = new GFolder(path);
                 folders.add(f);
             }
             else
-                f = this.getRootFolder(path);
+                f = this.getRootFolderByPath(path);
         }
         return f;      
     }
@@ -213,9 +211,9 @@ public class Database
         return l;
     }
     
-    public ArrayList<String> processTags(String[] tags)
+    public List<String> processTags(String[] tags)
     {
-        ArrayList<String> res = new ArrayList<>();
+        List<String> res = new ArrayList<>();
         if(tags != null)
             for(int i = 0; i < tags.length; i++)
             {
@@ -344,12 +342,12 @@ public class Database
         return res;
     }
     
-    public ArrayList<GImageList> getImageLists()
+    public List<GImageList> getImageLists()
     {
         return lists;
     }
     
-    public ArrayList<GFolder> getFolders()
+    public List<GFolder> getFolders()
     {
         return folders;
     }
@@ -379,7 +377,7 @@ public class Database
                     continue;
                 GFolder f1 = fldrs.get(i);
                 //f1 contains f as subfolder
-                if(f1.getFolderByName(f.getPath(), true) != null)
+                if(f1.getFolderByPath(f.getPath(), true) != null)
                 {
                     flag = true;
                     roots.add(f);
@@ -542,7 +540,7 @@ public class Database
     }
     
     public void rescan() {
-    	ArrayList<GFolder> folders = this.getFolders();
+    	List<GFolder> folders = this.getFolders();
     	for(GFolder folder : folders) {
     		List<GImage> images = folder.getImages();
     		String path = folder.getPath();

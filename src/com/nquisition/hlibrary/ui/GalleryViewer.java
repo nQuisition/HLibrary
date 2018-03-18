@@ -1046,7 +1046,7 @@ final class GalleryViewer extends UIView
                 return;
             String[] temp = t.split("\\s+");
             //TODO
-            ArrayList<String> tags = dbInterface.getActiveDatabase().processTags(temp);
+            List<String> tags = dbInterface.getActiveDatabase().processTags(temp);
             gal.setTags(tags);
             gal.currentImageModified();
         }

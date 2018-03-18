@@ -23,6 +23,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+
 import uk.co.jaimon.test.SimpleImageInfo;
 import java.util.*;
 import java.util.function.Consumer;
@@ -50,27 +53,49 @@ public final class FileUtils {
     
     private FileUtils() { }
     
+    public static void forEachFolderIn(File folder, boolean recursive, Consumer<File> action) {
+		forEachFolderIn(folder, recursive, null, null, action);
+	}
+    
     public static void forEachFolderIn(File folder, boolean recursive, 
 			Predicate<File> filter, Consumer<File> action) {
+		forEachFolderIn(folder, recursive, filter, null, action);
+	}
+    
+    public static void forEachFolderIn(File folder, boolean recursive, 
+			Predicate<File> filter, Comparator<File> sorter, Consumer<File> action) {
 		File[] listOfFiles = folder.listFiles();
+		if(sorter != null)
+			Arrays.sort(listOfFiles, sorter);
 	    
 	    for(File file : listOfFiles) {
 	        if(file.isDirectory()) {
 	        	if(recursive)
-	            	forEachFolderIn(file, recursive, filter, action);
+	            	forEachFolderIn(file, recursive, filter, sorter, action);
 	        	if(filter == null || filter.test(file))
 	        		action.accept(file);
 	        }
 	    }
 	}
+    
+    public static void forEachFileIn(File folder, boolean recursive, Consumer<File> action) {
+    	forEachFileIn(folder, recursive, null, null, action);
+	}
+    
+    public static void forEachFileIn(File folder, boolean recursive, 
+			Predicate<File> filter, Consumer<File> action) {
+    	forEachFileIn(folder, recursive, filter, null, action);
+	}
 
 	public static void forEachFileIn(File folder, boolean recursive, 
-			Predicate<File> filter, Consumer<File> action) {
+			Predicate<File> filter, Comparator<File> sorter, Consumer<File> action) {
 		File[] listOfFiles = folder.listFiles();
+		if(sorter != null)
+			Arrays.sort(listOfFiles, sorter);
 	    
 	    for(File file : listOfFiles) {
 	        if(file.isDirectory() && recursive)
-	        	forEachFileIn(file, recursive, filter, action);
+	        	forEachFileIn(file, recursive, filter, sorter, action);
 	        else if(filter == null || filter.test(file))
 	        	action.accept(file);
 	    }
@@ -111,10 +136,16 @@ public final class FileUtils {
 	    }
 	    return properRoot + name;
 	}
-
+	
 	public static boolean checkImageVertical(File file, double thresholdV) throws IOException {
-	    SimpleImageInfo imageInfo = new SimpleImageInfo(file);
-	    double ratio = (double)imageInfo.getWidth()/imageInfo.getHeight();
+		double ratio = 0;
+		try {
+		    SimpleImageInfo imageInfo = new SimpleImageInfo(file);
+		    ratio = (double)imageInfo.getWidth()/imageInfo.getHeight();
+		} catch(IOException e) {
+			BufferedImage img = ImageIO.read(file);
+            ratio = (double)img.getWidth()/img.getHeight();
+		}
 	    return (ratio < thresholdV);
 	}
 
@@ -144,10 +175,15 @@ public final class FileUtils {
 			    		file.getName().toLowerCase().endsWith(".png") ||
 			    		file.getName().toLowerCase().endsWith(".jpeg")));
 	}
+	
+	public static boolean isArchive(File file) {
+	    return (file.isFile() && (file.getName().toLowerCase().endsWith(".zip") ||
+			    		file.getName().toLowerCase().endsWith(".rar")));
+	}
 
 	public static boolean isVerticalImage(File file) {
 		try {
-	    	if(isImage(file))
+	    	if(isImage(file)) 
 	    		return checkImageVertical(file, VERTICALITY_THRESHOLD);
 		} catch(IOException e) { return false ; }
 		return false;
@@ -179,44 +215,68 @@ public final class FileUtils {
 	    
 	    return cname;
 	}
+	
+	public static String getImageType(File file) {
+		String imageType = null;
+		//TODO see how much faster the SimpleImageInfo way is and if it is actually needed
+        try {
+        	SimpleImageInfo imageInfo = new SimpleImageInfo(file);
+        	if(imageInfo.getMimeType().equalsIgnoreCase("image/jpeg"))
+        		imageType = "JPEG";
+        	else if(imageInfo.getMimeType().equalsIgnoreCase("image/png"))
+        		imageType = "PNG";
+        } catch (IOException e) {
+        	try {
+	        	ImageInputStream iis = ImageIO.createImageInputStream(file);
+		        Iterator<ImageReader> iter = ImageIO.getImageReaders(iis);
+		        //TODO proper handling
+		        if (!iter.hasNext()) {
+		        	return null;
+		        }
+		        ImageReader reader = iter.next();
+		        imageType = reader.getFormatName();
+		        iis.close();
+	        } catch(IOException ex) { }
+		}
+        return imageType;
+	}
 
 	public static Process rotateImageEx(String path, String name, boolean left) {
+		String properPath = toProperPath(path);
+        String fullPath = properPath + name;
+    
+        File src = new File(fullPath);
+        System.out.println("Rotating " + fullPath);
+        String imageType = getImageType(src);
+        if(imageType == null)
+        	return null;
+        
 	    try {
-	        String properPath = toProperPath(path);
-	        String fullPath = properPath + name;
-	    
-	        File src = new File(fullPath);
-	        System.out.println("Rotating " + fullPath);
-	
-	        SimpleImageInfo imageInfo = new SimpleImageInfo(src);
-	
-	        if(imageInfo.getMimeType().equalsIgnoreCase("image/jpeg")) {
+	        if(imageType.equalsIgnoreCase("JPEG")) {
 	            int angle = left ? 270 : 90;
 	            //TODO make a config variable for this utility location
 	            System.out.println("Exexuting " + "D:\\jpegtran -rotate " +
 	                    angle + " \"" + fullPath + "\" \"" + fullPath + "\"");
 	            return Runtime.getRuntime().exec("D:\\jpegtran -rotate " +
 	                    angle + " \"" + fullPath + "\" \"" + fullPath + "\"");
-	        } else if(imageInfo.getMimeType().equalsIgnoreCase("image/png")) {
-	            try {
-	                PngEncoder encoder = new PngEncoder();
-	                BufferedImage img = ImageIO.read(src);
-	                int w = img.getWidth();
-	                int h = img.getHeight();
-	                BufferedImage rotated = new BufferedImage(h, w, img.getType());
-	                AffineTransform transform = new AffineTransform();
-	                Graphics2D g = rotated.createGraphics();
-	                transform.translate(0, w);
-	                double angle = left ? -Math.PI/2 : Math.PI/2;
-	                transform.rotate(angle);
-	                g.drawImage(img, transform, null);
-	                OutputStream out = new FileOutputStream(src);
-	                encoder.write(rotated, out);
-	                out.close();
-	            } catch(IllegalArgumentException e) { return null; }
+	        } else if(imageType.equalsIgnoreCase("PNG")) {
+                PngEncoder encoder = new PngEncoder();
+                BufferedImage img = ImageIO.read(src);
+                int w = img.getWidth();
+                int h = img.getHeight();
+                BufferedImage rotated = new BufferedImage(h, w, img.getType());
+                AffineTransform transform = new AffineTransform();
+                Graphics2D g = rotated.createGraphics();
+                transform.translate(0, w);
+                double angle = left ? -Math.PI/2 : Math.PI/2;
+                transform.rotate(angle);
+                g.drawImage(img, transform, null);
+                OutputStream out = new FileOutputStream(src);
+                encoder.write(rotated, out);
+                out.close();
 	        }
 	    }
-	    catch(IOException e) { return null; }
+	    catch(IOException|IllegalArgumentException e) { return null; }
 	    return null;
 	}
 
@@ -301,7 +361,7 @@ public final class FileUtils {
     
     public static List<String> changeAllToWritable(File folder) {
 	    List<String> fails = new ArrayList<>();
-	    forEachFileIn(folder, true, null, file -> {
+	    forEachFileIn(folder, true, file -> {
 	    	if(!file.setWritable(true)) {
 	            System.err.println("Cannot change permissions for file " + file.getAbsolutePath());
 	            fails.add(file.getAbsolutePath());
@@ -318,12 +378,12 @@ public final class FileUtils {
     }
     
     public static void moveAllFilesFromFolder(File folder, File destination) {
-	    forEachFileIn(folder, false, null, file -> moveFileToFolder(file, destination) );
+	    forEachFileIn(folder, false, file -> moveFileToFolder(file, destination) );
 	}
 
 	public static void moveAllFiles(File root) {
-	    forEachFolderIn(root, true, null, folder -> moveAllFilesFromFolder(folder, root) );
-	    forEachFolderIn(root, true, null, folder -> folder.delete() );
+	    forEachFolderIn(root, true, folder -> moveAllFilesFromFolder(folder, root) );
+	    forEachFolderIn(root, true, folder -> folder.delete() );
 	}
 
 	public static FileTime getCreationDate(String path) {

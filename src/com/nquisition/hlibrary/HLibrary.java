@@ -89,16 +89,6 @@ public class HLibrary extends Application implements PropertyProvider
         
         Tests tests = null;
         
-        if(!params.isEmpty() && params.get(0).equals("-test")) {
-        	tests = new Tests();
-        	if(!tests.runPreLoad()) {
-        		logger.fatal("Preload tests failed!");
-                pressEnterToContinue();
-                Platform.exit();
-                System.exit(-1);
-        	}
-        }
-        
         console = new HConsole();
         HConsoleAppender.setHConsole(console);
         
@@ -119,9 +109,16 @@ public class HLibrary extends Application implements PropertyProvider
         
         Parameters prms = getParameters();
         params = prms.getRaw();
-        /*System.out.println(params.size());
-        for(String p : params)
-            System.out.println(p);*/
+
+        if(!params.isEmpty() && params.get(0).equals("-test")) {
+        	tests = new Tests();
+        	if(!tests.runPreLoad()) {
+        		logger.fatal("Preload tests failed!");
+                pressEnterToContinue();
+                Platform.exit();
+                System.exit(-1);
+        	}
+        }
         
         dbInterface = new DatabaseInterface();
         progressManager = new HProgressManager();

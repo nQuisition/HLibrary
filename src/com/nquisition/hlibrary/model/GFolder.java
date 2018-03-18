@@ -93,7 +93,7 @@ public class GFolder extends GEntry implements IGFolder
         return -1;
     }
             
-    public GFolder getFolderByName(String path, boolean recursive)
+    public GFolder getFolderByPath(String path, boolean recursive)
     {
         if(path.equalsIgnoreCase(this.path))
             return this;
@@ -101,7 +101,7 @@ public class GFolder extends GEntry implements IGFolder
         {
             for(GFolder f : subfolders)
             {
-                GFolder res = f.getFolderByName(path, true);
+                GFolder res = f.getFolderByPath(path, true);
                 if(res != null)
                     return res;
             }

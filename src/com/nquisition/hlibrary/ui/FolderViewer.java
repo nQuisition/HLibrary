@@ -241,7 +241,7 @@ final class FolderViewer extends UIView {
                     	if(item.hasLocalDB()) {
                     		String folderName = item.getRoot() + item.getPath();
                     		Database db = dbInterface.getDatabase(folderName + "\\db.hdb");
-                    		GFolder folder = db.getFolderByName(folderName + "\\");
+                    		GFolder folder = db.getFolderByPath(folderName + "\\");
                     		if(folder.getRating() >= 0)
                     			prefix = "(" + folder.getRating() + ") ";
                     	}
@@ -334,7 +334,7 @@ final class FolderViewer extends UIView {
         {
             ArrayList<GImage> imgs = new ArrayList<>();
             //TODO
-            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolder(f.getRoot() + f.getPath() + "\\");
+            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolderByPath(f.getRoot() + f.getPath() + "\\");
             if(gfolder == null)
                 continue;
             f.setFolder(gfolder);
@@ -477,7 +477,7 @@ final class FolderViewer extends UIView {
         for(FolderEntry f : folders)
         {
         	//TODO
-            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolder(f.getRoot() + f.getPath() + "\\");
+            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolderByPath(f.getRoot() + f.getPath() + "\\");
             f.setFolder(gfolder);
             if(gfolder != null)
                 start.add(gfolder);
@@ -617,7 +617,7 @@ final class FolderViewer extends UIView {
             	dbInterface.loadDatabase(fileName, true, false);
             }
         	//TODO
-            GFolder folder = dbInterface.getActiveDatabase().getFolderByName(listOfFiles[i].getAbsolutePath() + "\\");
+            GFolder folder = dbInterface.getActiveDatabase().getFolderByPath(listOfFiles[i].getAbsolutePath() + "\\");
             res.add(new FolderEntry(root, listOfFiles[i].getName(), folder, exists));
         }
         
