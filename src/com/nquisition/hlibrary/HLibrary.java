@@ -174,15 +174,16 @@ public class HLibrary extends Application implements PropertyProvider
     public void startGlobal(String cfgFolder) {
     	logger.info("[TEST] Starting in global mode");
     	String dbFilePath = cfgFolder + Properties.get("dbjson");
-    	if(!dbInterface.loadDatabase(dbFilePath, false)) {
+    	//FIXME fix subs!
+    	if(!dbInterface.loadDatabase(dbFilePath, false, true)) {
             logger.fatal("Database file doesn't exist or is in invalid format");
             Platform.exit();
             System.exit(-1);
         }
         
-        dbInterface.getActiveFolders().stream()
-        		.sorted((a,b) -> a.getFavPercentage(false)<b.getFavPercentage(false)?1:a.getFavPercentage(false)>b.getFavPercentage(false)?-1:0)
-        		.forEach(a -> System.out.println((Math.round(a.getFavPercentage(false)*10000D)/100D) + "% :: " + a.getPath()));
+        //dbInterface.getActiveFolders().stream()
+        //		.sorted((a,b) -> a.getFavPercentage(false)<b.getFavPercentage(false)?1:a.getFavPercentage(false)>b.getFavPercentage(false)?-1:0)
+        //		.forEach(a -> System.out.println((Math.round(a.getFavPercentage(false)*10000D)/100D) + "% :: " + a.getPath()));
         
         dbInterface.activeInfo();
         

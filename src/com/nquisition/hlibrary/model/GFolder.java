@@ -110,6 +110,14 @@ public class GFolder extends GEntry implements IGFolder
         return null;
     }
     
+    public void subInPaths(String subFrom, String subTo) {
+    	System.out.println(path.startsWith(subFrom)+ "\"" + path + "\" starts with \"" + subFrom + "\"");
+	    if(path.startsWith(subFrom))
+			this.setPath(subTo + path.substring(subFrom.length()));
+	    for(GFolder folder : subfolders)
+	    	folder.subInPaths(subFrom, subTo);
+    }
+    
     @Override
 	public int getNumImages()
     {

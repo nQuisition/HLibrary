@@ -52,10 +52,15 @@ public class DatabaseInterface implements IDatabaseInterface
 	}
 	
 	public boolean loadDatabase(String fileName, boolean local) {
-		return loadDatabase(fileName, local, true);
+		return loadDatabase(fileName, local, true, null, null);
 	}
 	
 	public boolean loadDatabase(String fileName, boolean local, boolean setAsActive) {
+		return loadDatabase(fileName, local, setAsActive, null, null);
+	}
+	
+	public boolean loadDatabase(String fileName, boolean local, boolean setAsActive,
+			String subFrom, String subTo) {
 		if(databases.containsKey(fileName)) {
 			logger.info("Database \"" + fileName + "\" is already loaded, skipping");
 			return true;
@@ -80,7 +85,7 @@ public class DatabaseInterface implements IDatabaseInterface
 			db = readDatabaseFromJson(fileName, local);
 			//No images after loading -> fail
 			//TODO maybe change this and allow databases to have some other metadata (like its location)
-			if(db == null || db.getImages().size() <= 0)
+			if(db == null /*|| db.getImages().size() <= 0*/)
 				return false;
 		} else {
 			//Legacy format
@@ -93,7 +98,12 @@ public class DatabaseInterface implements IDatabaseInterface
 	            return false;
 	        }
 		}
-		db.sortFolders();
+		if(subFrom != null) {
+			System.out.println("Subbing from \"" + subFrom + "\" to \"" + subTo + "\"");
+			db.subInPaths(subFrom, subTo);
+		}
+		//FIXME get time data not from folder creation time, but from files inside folder
+		//db.sortFolders();
 		databases.put(fileName, db);
 		logger.info("Loaded \"" + fileName + "\" " + db);
 		if(setAsActive)

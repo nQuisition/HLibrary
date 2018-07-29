@@ -242,6 +242,9 @@ final class FolderViewer extends UIView {
                     		String folderName = item.getRoot() + item.getPath();
                     		Database db = dbInterface.getDatabase(folderName + "\\db.hdb");
                     		GFolder folder = db.getFolderByPath(folderName + "\\");
+                    		if(folder == null) {
+                    			return;
+                    		}
                     		if(folder.getRating() >= 0)
                     			prefix = "(" + folder.getRating() + ") ";
                     	}

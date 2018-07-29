@@ -15,12 +15,12 @@ public class GImageList extends GEntry
 {
     private static int NEXTID = 0;
     private int id;
-    private ArrayList<GImage> images;
+    private List<GImage> images;
     
     public GImageList()
     {
         this.resetTags();
-        images = new ArrayList<GImage>();
+        images = new ArrayList<>();
         id = NEXTID;
         NEXTID++;
     }
@@ -28,7 +28,7 @@ public class GImageList extends GEntry
     public GImageList(int id)
     {
         this.resetTags();
-        images = new ArrayList<GImage>();
+        images = new ArrayList<>();
         this.id = id;
         NEXTID = NEXTID>id?NEXTID:id+1;
     }
@@ -80,7 +80,7 @@ public class GImageList extends GEntry
         return 0;
     }
     
-    public ArrayList<GImage> getImages()
+    public List<GImage> getImages()
     {
         return images;
     }

@@ -452,6 +452,12 @@ public class Database
         bw.write(FOLDER_END + "\n");
     }
     
+    public void subInPaths(String subFrom, String subTo) {
+    	for(GFolder folder : folders) {
+    		folder.subInPaths(subFrom, subTo);
+    	}
+    }
+    
     public int loadDatabase()
     {
         File f = new File(location);
