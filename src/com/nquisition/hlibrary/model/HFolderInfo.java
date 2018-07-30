@@ -8,7 +8,7 @@ package com.nquisition.hlibrary.model;
 import com.nquisition.util.FileUtils;
 import com.nquisition.hlibrary.util.CreationTimeGFolderComparator;
 import com.nquisition.hlibrary.Utils;
-import com.nquisition.hlibrary.api.IGFolder;
+import com.nquisition.hlibrary.api.ReadOnlyFolderInfo;
 
 import java.util.*;
 import java.io.*;
@@ -17,13 +17,13 @@ import java.io.*;
  *
  * @author Master
  */
-public class GFolder extends GEntry implements IGFolder
+public class HFolderInfo extends HEntryInfo implements ReadOnlyFolderInfo
 {
     private String path;
     private String alias;
-    private transient GFolder parent;
-    private List<GImage> images;
-    private List<GFolder> subfolders;
+    private transient HFolderInfo parent;
+    private List<HImageInfo> images;
+    private List<HFolderInfo> subfolders;
     
     @Override
 	public String toString()
@@ -31,7 +31,7 @@ public class GFolder extends GEntry implements IGFolder
         return path;
     }
     
-    public GFolder()
+    public HFolderInfo()
     {
         path = "";
         alias = "";
@@ -41,7 +41,7 @@ public class GFolder extends GEntry implements IGFolder
         this.resetTags();
     }
     
-    public GFolder(String p)
+    public HFolderInfo(String p)
     {
     	this();
         path = p;
@@ -50,7 +50,7 @@ public class GFolder extends GEntry implements IGFolder
         alias = p.substring(p.lastIndexOf('\\') + 1);
     }
     
-    public GFolder(String p, GFolder par)
+    public HFolderInfo(String p, HFolderInfo par)
     {
         this(p);
         parent = par;
@@ -68,9 +68,9 @@ public class GFolder extends GEntry implements IGFolder
     		alias = temp.substring(temp.lastIndexOf('\\') + 1);
     	}
     	
-    	for(GImage image : images)
+    	for(HImageInfo image : images)
     		image.nullifyEmptyStrings();
-    	for(GFolder folder : subfolders)
+    	for(HFolderInfo folder : subfolders)
     		folder.nullifyEmptyStrings();
     }
     
@@ -93,15 +93,15 @@ public class GFolder extends GEntry implements IGFolder
         return -1;
     }
             
-    public GFolder getFolderByPath(String path, boolean recursive)
+    public HFolderInfo getFolderByPath(String path, boolean recursive)
     {
         if(path.equalsIgnoreCase(this.path))
             return this;
         if(recursive)
         {
-            for(GFolder f : subfolders)
+            for(HFolderInfo f : subfolders)
             {
-                GFolder res = f.getFolderByPath(path, true);
+                HFolderInfo res = f.getFolderByPath(path, true);
                 if(res != null)
                     return res;
             }
@@ -114,7 +114,7 @@ public class GFolder extends GEntry implements IGFolder
     	System.out.println(path.startsWith(subFrom)+ "\"" + path + "\" starts with \"" + subFrom + "\"");
 	    if(path.startsWith(subFrom))
 			this.setPath(subTo + path.substring(subFrom.length()));
-	    for(GFolder folder : subfolders)
+	    for(HFolderInfo folder : subfolders)
 	    	folder.subInPaths(subFrom, subTo);
     }
     
@@ -124,7 +124,7 @@ public class GFolder extends GEntry implements IGFolder
     	return images.size();
     }
     
-    public GFolder getTopLevelParent()
+    public HFolderInfo getTopLevelParent()
     {
     	if(parent != null)
     		return parent.getTopLevelParent();
@@ -153,36 +153,36 @@ public class GFolder extends GEntry implements IGFolder
         return path;
     }
     
-    public GFolder getParent()
+    public HFolderInfo getParent()
     {
         return parent;
     }
     
     @Override
-	public List<GImage> getImages()
+	public List<HImageInfo> getImages()
     {
         return new ArrayList<>(images);
     }
     
-    public void getAllImages(List<GImage> list)
+    public void getAllImages(List<HImageInfo> list)
     {
-        for(GImage i : images)
+        for(HImageInfo i : images)
             list.add(i);
-        for(GFolder f : subfolders)
+        for(HFolderInfo f : subfolders)
             f.getAllImages(list);
     }
     
-    public List<GFolder> getSubFolders()
+    public List<HFolderInfo> getSubFolders()
     {
         return subfolders;
     }
     
-    public void addImage(GImage img)
+    public void addImage(HImageInfo img)
     {
         images.add(img);
     }
     
-    public void addSubFolder(GFolder f)
+    public void addSubFolder(HFolderInfo f)
     {
         f.setParent(this);
         subfolders.add(f);
@@ -193,7 +193,7 @@ public class GFolder extends GEntry implements IGFolder
     	this.path = path;
     }
     
-    public void setParent(GFolder par)
+    public void setParent(HFolderInfo par)
     {
         parent = par;
     }
@@ -208,18 +208,18 @@ public class GFolder extends GEntry implements IGFolder
         String indent = "";
         for(int i = 0; i < num; i++)
             indent = "---" + indent;
-        for(GImage img : images)
+        for(HImageInfo img : images)
         {
             System.out.println(indent + img.getName());
         }
-        for(GFolder f : subfolders)
+        for(HFolderInfo f : subfolders)
         {
             System.out.println(indent + "<" + f.getPath());
             f.printFolderRecursive(num+1);
         }
     }
     
-    public void removeImage(GImage img)
+    public void removeImage(HImageInfo img)
     {
         for(int i = 0; i < images.size(); i++)
         {
@@ -239,10 +239,10 @@ public class GFolder extends GEntry implements IGFolder
     
     public void purge(boolean recursive) throws IOException
     {
-        Iterator<GImage> i = images.iterator();
+        Iterator<HImageInfo> i = images.iterator();
         while (i.hasNext())
         {
-            GImage img = i.next();
+            HImageInfo img = i.next();
             File f = new File(img.getFullPath());
             if(!f.exists())
             {
@@ -255,10 +255,10 @@ public class GFolder extends GEntry implements IGFolder
         if(!recursive)
             return;
         
-        Iterator<GFolder> j = subfolders.iterator();
+        Iterator<HFolderInfo> j = subfolders.iterator();
         while (j.hasNext())
         {
-            GFolder fl = j.next();
+            HFolderInfo fl = j.next();
             fl.purge(recursive);
             if(!fl.folderExists())
                 j.remove();
@@ -274,7 +274,7 @@ public class GFolder extends GEntry implements IGFolder
         {
             if(FileUtils.isImage(f))
             {
-                GImage.create(this, f.getName(), true, -1, true);
+                HImageInfo.create(this, f.getName(), true, -1, true);
             }
             else if(chkFolders && f.isDirectory())
             {
@@ -286,19 +286,19 @@ public class GFolder extends GEntry implements IGFolder
         }
         
         this.checkVerticalityDefault(false);
-        Comparator<GFolder> comp = new CreationTimeGFolderComparator();
+        Comparator<HFolderInfo> comp = new CreationTimeGFolderComparator();
         Collections.sort(subfolders, comp);
         
         //TODO sort files?!
         
         if(recursive)
-            for(GFolder sub : subfolders)
+            for(HFolderInfo sub : subfolders)
                 sub.refresh(chkFolders, recursive);
     }
     
     public boolean containsSubfolder(String name)
     {
-        for(GFolder sub : subfolders)
+        for(HFolderInfo sub : subfolders)
         {
             String tmp = sub.getPath().endsWith("\\")?sub.getPath().substring(0, sub.getPath().length()-1):sub.getPath();
             String nm2 = tmp.substring(tmp.lastIndexOf('\\') + 1);
@@ -311,7 +311,7 @@ public class GFolder extends GEntry implements IGFolder
     //TODO this probably belongs in the Database still...
     public void checkVerticality(double tV, double tH, boolean nameOnly, boolean recursive)
     {
-        for(GImage img : getImages())
+        for(HImageInfo img : getImages())
         {
             if(img.hasTag("vertical") || img.hasTag("horizontal") || 
                     img.hasTag("mixed") || img.hasTag("horizontal_forced") ||
@@ -338,7 +338,7 @@ public class GFolder extends GEntry implements IGFolder
                 img.addTag("horizontal", true);
         }
         if(recursive)
-            for(GFolder fld : getSubFolders())
+            for(HFolderInfo fld : getSubFolders())
                 fld.checkVerticality(tV, tH, nameOnly, recursive);
     }
     
@@ -347,10 +347,10 @@ public class GFolder extends GEntry implements IGFolder
         this.checkVerticality(1.0, 1.0, true, recursive);
     }
     
-    public void sortSubfolders(Comparator<GFolder> comp)
+    public void sortSubfolders(Comparator<HFolderInfo> comp)
     {
         Collections.sort(this.subfolders, comp);
-        for(GFolder f : this.subfolders)
+        for(HFolderInfo f : this.subfolders)
             f.sortSubfolders(comp);
     }
     
@@ -359,7 +359,7 @@ public class GFolder extends GEntry implements IGFolder
      * @param img1 Image to move
      * @param img2 Image after which to place
      */
-    public int moveImageAfter(GImage img1, GImage img2)
+    public int moveImageAfter(HImageInfo img1, HImageInfo img2)
     {
         if(img1.getParent() != this || img2.getParent() != this)
             return -1;
@@ -369,14 +369,14 @@ public class GFolder extends GEntry implements IGFolder
             return -2;
         if(pos2 == -1)
             return -3;
-        GImage img = images.remove(pos1);
+        HImageInfo img = images.remove(pos1);
         if(pos1 <= pos2)
             pos2 -= 1;
         images.add(pos2+1, img);
         return 0;
     }
     
-    public int locate(GImage img)
+    public int locate(HImageInfo img)
     {
         for(int i = 0; i < images.size(); i++)
             if(img == images.get(i))
@@ -389,9 +389,9 @@ public class GFolder extends GEntry implements IGFolder
     	return numFavs/images.size();
     }
     
-    public void sortImages(Comparator<GImage> comp) {
+    public void sortImages(Comparator<HImageInfo> comp) {
     	Collections.sort(this.images, comp);
-        for(GFolder f : this.subfolders)
+        for(HFolderInfo f : this.subfolders)
             f.sortImages(comp);
     }
 }

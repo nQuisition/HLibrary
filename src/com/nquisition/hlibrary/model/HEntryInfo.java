@@ -8,13 +8,13 @@ package com.nquisition.hlibrary.model;
 import java.util.*;
 import java.util.Map.Entry;
 
-import com.nquisition.hlibrary.api.IGEntry;
+import com.nquisition.hlibrary.api.ReadOnlyEntryInfo;
 
 /**
  *
  * @author Master
  */
-public class GEntry implements IGEntry
+public class HEntryInfo implements ReadOnlyEntryInfo
 {
     private String comment = null;
     private List<String> tags;

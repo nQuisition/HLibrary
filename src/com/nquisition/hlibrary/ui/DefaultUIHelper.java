@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import com.nquisition.hlibrary.HLibrary;
-import com.nquisition.hlibrary.api.IGImage;
+import com.nquisition.hlibrary.api.ReadOnlyImageInfo;
 import com.nquisition.hlibrary.api.UIHelper;
 import com.nquisition.hlibrary.api.UIManager;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.DatabaseInterface;
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HImageInfo;
 import com.nquisition.hlibrary.model.GImageList;
 import com.nquisition.hlibrary.model.Gallery;
 
@@ -28,12 +28,12 @@ public class DefaultUIHelper implements UIHelper {
 	}
 
 	@Override
-	public void showImagesSatisfyingConditions(List<Predicate<IGImage>> imageConditions) {
+	public void showImagesSatisfyingConditions(List<Predicate<ReadOnlyImageInfo>> imageConditions) {
 		Gallery gal = new Gallery(dbInterface.getActiveDatabase());
-        List<GImage> end = new ArrayList<>();
-        List<GImage> start = new ArrayList<>();
+        List<HImageInfo> end = new ArrayList<>();
+        List<HImageInfo> start = new ArrayList<>();
         
-        for(GImage img : dbInterface.getActiveImagesSatisfyingConditions(imageConditions)) {
+        for(HImageInfo img : dbInterface.getActiveImagesSatisfyingConditions(imageConditions)) {
             if(img.hasTag("horizontal")) {
                 start.add(img);
             } else if(img.hasTag("vertical")) {
@@ -41,7 +41,7 @@ public class DefaultUIHelper implements UIHelper {
             }
         }
         
-        for(GImage img : end)
+        for(HImageInfo img : end)
             start.add(img);
         
         gal.addImages(start);
@@ -71,7 +71,7 @@ public class DefaultUIHelper implements UIHelper {
             else
                 allowed.add(arr[i]);
         }
-        List<Predicate<IGImage>> conditions = new ArrayList<>();
+        List<Predicate<ReadOnlyImageInfo>> conditions = new ArrayList<>();
         for(String cond : allowed) {
         	boolean isFolder = false;
         	if(cond.charAt(0) == ':') {

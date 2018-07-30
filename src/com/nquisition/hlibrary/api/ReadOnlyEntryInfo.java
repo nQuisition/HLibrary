@@ -2,7 +2,8 @@ package com.nquisition.hlibrary.api;
 
 import java.util.List;
 
-public interface IGEntry extends PropertyContainer {
+//FIXME not really read only, since has addTag
+public interface ReadOnlyEntryInfo extends PropertyContainer {
 	long getAdded();
 	long getLastmod();
 	long getViewed();

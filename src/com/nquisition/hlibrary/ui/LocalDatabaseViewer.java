@@ -11,7 +11,7 @@ import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.DatabaseInterface;
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HImageInfo;
 import java.io.*;
 import java.util.*;
 import javafx.collections.*;
@@ -90,11 +90,11 @@ public class LocalDatabaseViewer extends HConsoleStage
         //db.checkVerticality(1.0, 1.0, true);
 
         Gallery gal = new Gallery(dbInterface.getActiveDatabase());
-        ArrayList<GImage> start = new ArrayList<>();
+        ArrayList<HImageInfo> start = new ArrayList<>();
         for(String f : folders)
         {
-            ArrayList<GImage> imgs = dbInterface.getDatabase(root + f + "\\").getImages();
-            for(GImage img : imgs)
+            ArrayList<HImageInfo> imgs = dbInterface.getDatabase(root + f + "\\").getImages();
+            for(HImageInfo img : imgs)
             {
                 start.add(img);
             }

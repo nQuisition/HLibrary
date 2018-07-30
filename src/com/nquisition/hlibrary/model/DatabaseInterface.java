@@ -26,7 +26,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.api.IDatabaseInterface;
-import com.nquisition.hlibrary.api.IGImage;
+import com.nquisition.hlibrary.api.ReadOnlyImageInfo;
 import com.nquisition.hlibrary.api.ProgressManager;
 import com.nquisition.hlibrary.api.ProgressMonitor;
 
@@ -181,12 +181,12 @@ public class DatabaseInterface implements IDatabaseInterface
 	}
 	
 	@Override
-	public List<GFolder> getActiveFolders() {
+	public List<HFolderInfo> getActiveFolders() {
 		return new ArrayList<>(activeDatabase.getFolders());
 	}
 	
 	@Override
-	public List<GImage> getActiveImages() {
+	public List<HImageInfo> getActiveImages() {
 		return new ArrayList<>(activeDatabase.getImages());
 	}
 	
@@ -219,7 +219,7 @@ public class DatabaseInterface implements IDatabaseInterface
 			return null;
 		}
 
-		List<GImage> images = new ArrayList<>(db.getImages()); 
+		List<HImageInfo> images = new ArrayList<>(db.getImages()); 
 		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Computing similarity strings");
 		progressMonitor.start(images.size());
 		
@@ -258,8 +258,8 @@ public class DatabaseInterface implements IDatabaseInterface
 	}
 	
 	//TODO memory leaks?
-		public Callable<Integer> computeSimilarityStrings(GFolder folder) {
-			List<GImage> images = folder.getImages();
+		public Callable<Integer> computeSimilarityStrings(HFolderInfo folder) {
+			List<HImageInfo> images = folder.getImages();
 			ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Computing similarity strings");
 			progressMonitor.start(images.size());
 			
@@ -299,7 +299,7 @@ public class DatabaseInterface implements IDatabaseInterface
 	//TODO memory leaks?
 	//TODO compute similarity or leave like this?
 	//Assumes similarity is computed; skips images without similarity info
-	public Callable<Map<GImage, List<GImage>>> findSimilarImages(String dbLocation, int threshold) {
+	public Callable<Map<HImageInfo, List<HImageInfo>>> findSimilarImages(String dbLocation, int threshold) {
 		Database db;
 		if(dbLocation == null)
 			db = this.getActiveDatabase();
@@ -310,17 +310,17 @@ public class DatabaseInterface implements IDatabaseInterface
 			return null;
 		}
 
-		List<GImage> images = new ArrayList<>(db.getImages()); 
+		List<HImageInfo> images = new ArrayList<>(db.getImages()); 
 		ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Finding similar images");
 		progressMonitor.start(images.size());
 		
 		//TODO detect sketches and ignore them
 		return () -> {
-			Map<GImage, List<GImage>> res = new HashMap<>();
+			Map<HImageInfo, List<HImageInfo>> res = new HashMap<>();
 			images.stream().parallel().forEach(img -> {
 				progressMonitor.add(1);
 	            for(int j = 0; j < images.size(); j++) {
-	            	GImage image2 = images.get(j);
+	            	HImageInfo image2 = images.get(j);
 	            	
 	            	if(img == image2)
 	            		continue;
@@ -341,7 +341,7 @@ public class DatabaseInterface implements IDatabaseInterface
 	//TODO memory leaks?
 		//TODO compute similarity or leave like this?
 		//Assumes similarity is computed; skips images without similarity info
-		public Callable<Map<GImage, List<GImage>>> findPartitions(String dbLocation, int threshold) {
+		public Callable<Map<HImageInfo, List<HImageInfo>>> findPartitions(String dbLocation, int threshold) {
 			Database db;
 			if(dbLocation == null)
 				db = this.getActiveDatabase();
@@ -352,19 +352,19 @@ public class DatabaseInterface implements IDatabaseInterface
 				return null;
 			}
 
-			List<GImage> images = new ArrayList<>(db.getImages()); 
+			List<HImageInfo> images = new ArrayList<>(db.getImages()); 
 			ProgressMonitor progressMonitor = HLibrary.requestProgressMonitor("Finding similar images");
 			progressMonitor.start(images.size());
 			
 			//TODO detect sketches and ignore them
 			return () -> {
-				Map<GImage, List<GImage>> res = new LinkedHashMap<>();
+				Map<HImageInfo, List<HImageInfo>> res = new LinkedHashMap<>();
 				int next = 0;
 				while(true) {
 					if(next >= images.size())
 						break;
 					
-					GImage img = images.get(next);
+					HImageInfo img = images.get(next);
 					int lastIndex = next;
 					
 					progressMonitor.add(1);
@@ -375,7 +375,7 @@ public class DatabaseInterface implements IDatabaseInterface
 						break;
 					
 		            for(int j = next+1; j < images.size(); j++) {
-		            	GImage image2 = images.get(j);
+		            	HImageInfo image2 = images.get(j);
 		            	
 		            	boolean found = false;
 		            	int minDiff = -1;
@@ -493,9 +493,9 @@ public class DatabaseInterface implements IDatabaseInterface
 		return dictionary;
 	}
 	
-	private GFolder readGFolderFromJson(JsonReader reader) throws IOException
+	private HFolderInfo readGFolderFromJson(JsonReader reader) throws IOException
 	{
-		GFolder folder = new GFolder();
+		HFolderInfo folder = new HFolderInfo();
 		
 		reader.beginObject();
 		while(reader.hasNext())
@@ -537,9 +537,9 @@ public class DatabaseInterface implements IDatabaseInterface
 		return folder;
 	}
 	
-	private static GImage readGImageFromJson(JsonReader reader, GFolder parent) throws IOException
+	private static HImageInfo readGImageFromJson(JsonReader reader, HFolderInfo parent) throws IOException
 	{
-		GImage image = new GImage();
+		HImageInfo image = new HImageInfo();
 		image.setParent(parent);
 		
 		reader.beginObject();
@@ -568,7 +568,7 @@ public class DatabaseInterface implements IDatabaseInterface
 		return image;
 	}
 	
-	private static void processGEntryField(GEntry entry, String fieldName, JsonReader reader) throws IOException
+	private static void processGEntryField(HEntryInfo entry, String fieldName, JsonReader reader) throws IOException
 	{
 		if(fieldName.equals("comment"))
 		{
@@ -608,7 +608,7 @@ public class DatabaseInterface implements IDatabaseInterface
 		}
 	}
 	
-	public static void processCustomProps(GEntry entry, JsonReader reader) throws IOException {
+	public static void processCustomProps(HEntryInfo entry, JsonReader reader) throws IOException {
 		reader.beginObject();
 		while(reader.hasNext()) {
 			String fieldName = reader.nextName();
@@ -622,12 +622,12 @@ public class DatabaseInterface implements IDatabaseInterface
 		activeDatabase.checkVerticality(tV, tH, nameOnly);
 	}
 	
-	public List<GImage> getActiveImagesSatisfyingConditions(List<Predicate<IGImage>> conditions) {
-		List<GImage> images = activeDatabase.getImages();
-		List<GImage> res = new ArrayList<>(); 
-		for(GImage image : images) {
+	public List<HImageInfo> getActiveImagesSatisfyingConditions(List<Predicate<ReadOnlyImageInfo>> conditions) {
+		List<HImageInfo> images = activeDatabase.getImages();
+		List<HImageInfo> res = new ArrayList<>(); 
+		for(HImageInfo image : images) {
 			boolean failed = false;
-			for(Predicate<IGImage> predicate : conditions) {
+			for(Predicate<ReadOnlyImageInfo> predicate : conditions) {
 				if(!predicate.test(image)) {
 					failed = true;
 					break;

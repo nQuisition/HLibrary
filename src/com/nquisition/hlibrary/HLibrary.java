@@ -9,11 +9,11 @@ import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.model.HCustomPropertiesManager;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.DatabaseInterface;
-import com.nquisition.hlibrary.model.GFolder;
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HFolderInfo;
+import com.nquisition.hlibrary.model.HImageInfo;
 import com.google.gson.stream.JsonReader;
 import com.nquisition.hlibrary.api.BasePlugin;
-import com.nquisition.hlibrary.api.IGEntry;
+import com.nquisition.hlibrary.api.ReadOnlyEntryInfo;
 import com.nquisition.hlibrary.api.ProgressMonitor;
 import com.nquisition.hlibrary.api.PropertyProvider;
 import com.nquisition.hlibrary.api.UIManager;
@@ -165,7 +165,7 @@ public class HLibrary extends Application implements PropertyProvider
         }
         
         int count = 0;
-        for(GImage img : dbInterface.getActiveImages())
+        for(HImageInfo img : dbInterface.getActiveImages())
         	if(img.getSimilarityString() != null)
         		count++;
         System.out.println(count + "/" + dbInterface.getActiveImages().size());
@@ -192,9 +192,9 @@ public class HLibrary extends Application implements PropertyProvider
         db1.loadDatabase();
         db1.info();*/
 
-        List<GImage> images = dbInterface.getActiveImages();
+        List<HImageInfo> images = dbInterface.getActiveImages();
         List<String> tags = new ArrayList<>();
-        for(GImage img : images)
+        for(HImageInfo img : images)
         {
             List<String> tgs = img.getTags();
             for(String t : tgs)
@@ -320,9 +320,9 @@ public class HLibrary extends Application implements PropertyProvider
             System.exit(-1);
         }
 
-        List<GImage> images = dbInterface.getActiveImages();
+        List<HImageInfo> images = dbInterface.getActiveImages();
         List<String> tags = new ArrayList<>();
-        for(GImage img : images)
+        for(HImageInfo img : images)
         {
             List<String> tgs = img.getTags();
             for(String t : tgs)
@@ -439,7 +439,7 @@ public class HLibrary extends Application implements PropertyProvider
 	}
 
 	@Override
-	public void readPropertyFromJson(IGEntry entry, String propName, JsonReader reader) {
+	public void readPropertyFromJson(ReadOnlyEntryInfo entry, String propName, JsonReader reader) {
 		
 	}
 }

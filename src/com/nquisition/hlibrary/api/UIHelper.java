@@ -4,6 +4,6 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public interface UIHelper {
-	void showImagesSatisfyingConditions(List<Predicate<IGImage>> conditions);
+	void showImagesSatisfyingConditions(List<Predicate<ReadOnlyImageInfo>> conditions);
 	void showImagesWithTags(String tagString);
 }

@@ -7,5 +7,5 @@ import com.google.gson.stream.JsonReader;
 
 public interface CustomPropertiesManager {
 	Map<String, String> registerProvider(PropertyProvider provider);
-	void readPropertyFromJson(IGEntry entry, String propName, JsonReader reader) throws IOException;
+	void readPropertyFromJson(ReadOnlyEntryInfo entry, String propName, JsonReader reader) throws IOException;
 }

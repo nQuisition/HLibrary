@@ -5,8 +5,8 @@
  */
 package com.nquisition.hlibrary.util;
 
-import com.nquisition.hlibrary.model.GFolder;
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HFolderInfo;
+import com.nquisition.hlibrary.model.HImageInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,9 +20,9 @@ import java.util.Comparator;
  *
  * @author Master
  */
-public class CreationTimeGImageComparator implements Comparator<GImage>
+public class CreationTimeGImageComparator implements Comparator<HImageInfo>
 {
-    public int compare(GImage folder1, GImage folder2)
+    public int compare(HImageInfo folder1, HImageInfo folder2)
     {
         File f1 = new File(folder1.getFullPath());
         File f2 = new File(folder2.getFullPath());

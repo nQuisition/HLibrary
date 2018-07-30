@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.nquisition.hlibrary.model.Database;
-import com.nquisition.hlibrary.model.GFolder;
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HFolderInfo;
+import com.nquisition.hlibrary.model.HImageInfo;
 import com.nquisition.hlibrary.model.Gallery;
 
 import javafx.event.ActionEvent;
@@ -37,15 +37,15 @@ public class SimilarityViewer extends HConsoleStage
     private Label similarityLabel;
     private Gallery gallery;
     //private List<GImage> left, right;
-    private Map<GImage, List<GImage>> images;
-    private List<GImage> indices; 
+    private Map<HImageInfo, List<HImageInfo>> images;
+    private List<HImageInfo> indices; 
     private int pos = -1;
     private int rightPos = 0;
     
     public static final int IMAGE_SIZE = 400;
     
     //TODO needs onClose operation/cleanup
-    public SimilarityViewer(Database d, Map<GImage, List<GImage>> map)
+    public SimilarityViewer(Database d, Map<HImageInfo, List<HImageInfo>> map)
     {
         super();
         db = d;
@@ -180,8 +180,8 @@ public class SimilarityViewer extends HConsoleStage
     public void setImages() {
     	counter.setText((pos+1) + "/" + indices.size());
     	rightCounter.setText((rightPos+1) + "/" + images.get(indices.get(pos)).size());
-    	GImage leftImage = indices.get(pos);
-    	GImage rightImage = images.get(indices.get(pos)).size()>0?images.get(indices.get(pos)).get(rightPos):null;
+    	HImageInfo leftImage = indices.get(pos);
+    	HImageInfo rightImage = images.get(indices.get(pos)).size()>0?images.get(indices.get(pos)).get(rightPos):null;
     	original.setImage(leftImage.cload());
     	similar.setImage(rightImage!=null?rightImage.cload():null);
     	setSimilarityImage(leftImage, originalHistogram);
@@ -189,12 +189,12 @@ public class SimilarityViewer extends HConsoleStage
     	originalName.setText(leftImage.getFullPath());
     	similarName.setText(rightImage!=null?rightImage.getFullPath():"");
     	int diff = leftImage.differenceFrom(rightImage, -1, false);
-    	double ppDiff = diff/(GImage.RESOLUTION*GImage.RESOLUTION); //(leftImage.cload().getWidth()*leftImage.cload().getHeight());
+    	double ppDiff = diff/(HImageInfo.RESOLUTION*HImageInfo.RESOLUTION); //(leftImage.cload().getWidth()*leftImage.cload().getHeight());
     	similarityLabel.setText("Difference: " + diff + "(" + ppDiff + "pp);\n w1: "
     			+ leftImage.getWhiteness() + ", w2: " + ((rightImage!=null)?rightImage.getWhiteness():""));
     }
     
-    private static void setSimilarityImage(GImage gimg, ImageView imv) {
+    private static void setSimilarityImage(HImageInfo gimg, ImageView imv) {
     	try {
     		if(gimg == null) {
     			imv.setImage(null);

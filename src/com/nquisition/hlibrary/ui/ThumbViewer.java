@@ -6,12 +6,12 @@
 package com.nquisition.hlibrary.ui;
 
 import com.nquisition.hlibrary.model.Gallery;
-import com.nquisition.hlibrary.model.GFolder;
+import com.nquisition.hlibrary.model.HFolderInfo;
 import com.nquisition.hlibrary.HLibrary;
 import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.model.Database;
-import com.nquisition.hlibrary.model.GImage;
-import static com.nquisition.hlibrary.model.GImage.RESOLUTION;
+import com.nquisition.hlibrary.model.HImageInfo;
+import static com.nquisition.hlibrary.model.HImageInfo.RESOLUTION;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -45,7 +45,7 @@ public class ThumbViewer extends HConsoleStage
     public static final int THUMB_SIZE = 180;
     
     //TODO needs onClose operation/cleanup
-    public ThumbViewer(Database d, ArrayList<GFolder> folders)
+    public ThumbViewer(Database d, ArrayList<HFolderInfo> folders)
     {
         super();
         db = d;
@@ -56,7 +56,7 @@ public class ThumbViewer extends HConsoleStage
         gridPane.setVgap(10);
         iFrames = new ArrayList<ImageFrame>();
 
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
         {
             x=0;
             y++;
@@ -64,13 +64,13 @@ public class ThumbViewer extends HConsoleStage
             fname.setFont(Font.font("Arial", FontWeight.BOLD, 24));
             gridPane.add(fname, 0, y, maxX+1, 1);
             y++;
-            ArrayList<GImage> imgs = new ArrayList<GImage>();
+            ArrayList<HImageInfo> imgs = new ArrayList<HImageInfo>();
             //TODO recursively add subfolders instead
             f.getAllImages(imgs);
             
             ArrayList<ImageFrame> end = new ArrayList<ImageFrame>();
             
-            for(GImage img : imgs)
+            for(HImageInfo img : imgs)
             {
                 //System.out.println(img.getFullPath());
                 /*Image image = new Image(new File(img.getFullPath()).toURI().toString(), THUMB_SIZE, THUMB_SIZE, true, false);
@@ -125,7 +125,7 @@ public class ThumbViewer extends HConsoleStage
         sp.addEventHandler(KeyEvent.KEY_PRESSED, (key) -> {
                 if(null!=key.getCode()) switch (key.getCode()) {
                     case ENTER:
-                        ArrayList<GImage> set = new ArrayList<GImage>();
+                        ArrayList<HImageInfo> set = new ArrayList<HImageInfo>();
                         for(ImageFrame frame : iFrames)
                         {
                             if(frame.isSelected())
@@ -146,12 +146,12 @@ public class ThumbViewer extends HConsoleStage
     
     private class ImageFrame extends StackPane
     {
-        private GImage img;
+        private HImageInfo img;
         private ImageView imv;
         private Rectangle border;
         private boolean selected = false;
         
-        public ImageFrame(GImage im)
+        public ImageFrame(HImageInfo im)
         {
             super();
             img = im;
@@ -216,7 +216,7 @@ public class ThumbViewer extends HConsoleStage
             return selected;
         }
         
-        public GImage getImage()
+        public HImageInfo getImage()
         {
             return img;
         }

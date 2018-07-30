@@ -9,5 +9,5 @@ public interface PropertyProvider {
 	String getIdentifier();
 	String[] getCustomProps();
 	//TODO too implementation specific; giving avay JsonReader is not safe
-	void readPropertyFromJson(IGEntry entry, String propName, JsonReader reader) throws IOException;
+	void readPropertyFromJson(ReadOnlyEntryInfo entry, String propName, JsonReader reader) throws IOException;
 }

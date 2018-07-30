@@ -2,7 +2,7 @@ package com.nquisition.hlibrary.ui;
 
 import java.io.File;
 
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HImageInfo;
 
 import javafx.event.EventHandler;
 import javafx.scene.image.Image;
@@ -16,11 +16,11 @@ final class HImageFrame extends StackPane
 {
 	private int thumbSize;
 	private int galPos;
-    private GImage img;
+    private HImageInfo img;
     private ImageView imv;
     private Rectangle border;
     
-    public HImageFrame(GImage im, int galPos, int thumbSize) {
+    public HImageFrame(HImageInfo im, int galPos, int thumbSize) {
         super();
         img = im;
         this.galPos = galPos;
@@ -75,7 +75,7 @@ final class HImageFrame extends StackPane
     	border.setVisible(visible);
     }
     
-    public GImage getImage() {
+    public HImageInfo getImage() {
         return img;
     }
     

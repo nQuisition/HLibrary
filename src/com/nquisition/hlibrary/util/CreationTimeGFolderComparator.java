@@ -5,7 +5,7 @@
  */
 package com.nquisition.hlibrary.util;
 
-import com.nquisition.hlibrary.model.GFolder;
+import com.nquisition.hlibrary.model.HFolderInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,9 +18,9 @@ import java.util.Comparator;
  *
  * @author Master
  */
-public class CreationTimeGFolderComparator implements Comparator<GFolder>
+public class CreationTimeGFolderComparator implements Comparator<HFolderInfo>
 {
-    public int compare(GFolder folder1, GFolder folder2)
+    public int compare(HFolderInfo folder1, HFolderInfo folder2)
     {
         File f1 = new File(folder1.getPath());
         File f2 = new File(folder2.getPath());

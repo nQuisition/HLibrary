@@ -20,8 +20,8 @@ import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.fxutil.HFXFactory;
 import com.nquisition.hlibrary.model.Database;
 import com.nquisition.hlibrary.model.DatabaseInterface;
-import com.nquisition.hlibrary.model.GFolder;
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HFolderInfo;
+import com.nquisition.hlibrary.model.HImageInfo;
 import com.nquisition.hlibrary.model.GImageList;
 import com.nquisition.hlibrary.model.Gallery;
 import com.nquisition.hlibrary.util.CreationTimeFileComparator;
@@ -72,10 +72,10 @@ final class FolderViewer extends UIView {
     private static class FolderEntry {
     	private String root;
     	private String path;
-    	private GFolder folder;
+    	private HFolderInfo folder;
     	private BooleanProperty hasLocalDB;
     	
-    	public FolderEntry(String root, String path, GFolder folder, boolean hasLocalDB) {
+    	public FolderEntry(String root, String path, HFolderInfo folder, boolean hasLocalDB) {
     		this.root = root;
     		this.path = path;
     		this.folder = folder;
@@ -90,11 +90,11 @@ final class FolderViewer extends UIView {
     		return path;
     	}
     	
-    	public GFolder getFolder() {
+    	public HFolderInfo getFolder() {
     		return folder;
     	}
     	
-    	public void setFolder(GFolder folder) {
+    	public void setFolder(HFolderInfo folder) {
     		this.folder = folder;
     	}
     	
@@ -177,10 +177,10 @@ final class FolderViewer extends UIView {
         	FolderEntry folder = folderTree.getSelectionModel().getSelectedItem().getValue();
         	String dbPath = folder.root + folder.path + "\\db.hdb";
             es.submit(dbInterface.computeSimilarityStrings(dbPath));
-            Future<Map<GImage, List<GImage>>> similars = es.submit(dbInterface.findPartitions(dbPath, 10000));
+            Future<Map<HImageInfo, List<HImageInfo>>> similars = es.submit(dbInterface.findPartitions(dbPath, 10000));
             es.submit(() -> {
             	try {
-            		Map<GImage, List<GImage>> map = similars.get();
+            		Map<HImageInfo, List<HImageInfo>> map = similars.get();
             		Platform.runLater(() -> {
             			SimilarityViewer sw = new SimilarityViewer(dbInterface.getActiveDatabase(), map);
             			sw.show();
@@ -241,7 +241,7 @@ final class FolderViewer extends UIView {
                     	if(item.hasLocalDB()) {
                     		String folderName = item.getRoot() + item.getPath();
                     		Database db = dbInterface.getDatabase(folderName + "\\db.hdb");
-                    		GFolder folder = db.getFolderByPath(folderName + "\\");
+                    		HFolderInfo folder = db.getFolderByPath(folderName + "\\");
                     		if(folder == null) {
                     			return;
                     		}
@@ -331,18 +331,18 @@ final class FolderViewer extends UIView {
 
         //TODO
         Gallery gal = new Gallery(dbInterface.getActiveDatabase());
-        ArrayList<GImage> end = new ArrayList<>();
-        ArrayList<GImage> start = new ArrayList<>();
+        ArrayList<HImageInfo> end = new ArrayList<>();
+        ArrayList<HImageInfo> start = new ArrayList<>();
         for(FolderEntry f : folders)
         {
-            ArrayList<GImage> imgs = new ArrayList<>();
+            ArrayList<HImageInfo> imgs = new ArrayList<>();
             //TODO
-            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolderByPath(f.getRoot() + f.getPath() + "\\");
+            HFolderInfo gfolder = dbInterface.getActiveDatabase().getRootFolderByPath(f.getRoot() + f.getPath() + "\\");
             if(gfolder == null)
                 continue;
             f.setFolder(gfolder);
             gfolder.getAllImages(imgs);
-            for(GImage img : imgs)
+            for(HImageInfo img : imgs)
             {
                if(img.hasTag("horizontal"))
                 {
@@ -354,7 +354,7 @@ final class FolderViewer extends UIView {
                 }
             }
         }
-        for(GImage img : end)
+        for(HImageInfo img : end)
             start.add(img);
         gal.addImages(start);
         
@@ -423,13 +423,13 @@ final class FolderViewer extends UIView {
 
         //TODO
         Gallery gal = new Gallery(dbInterface.getDatabase(location));
-        List<GImage> end = new ArrayList<>();
-        List<GImage> start = new ArrayList<>();
+        List<HImageInfo> end = new ArrayList<>();
+        List<HImageInfo> start = new ArrayList<>();
       //TODO
-        List<GImage> imgs = dbInterface.getDatabase(location).getImages();
+        List<HImageInfo> imgs = dbInterface.getDatabase(location).getImages();
         System.out.println(imgs.size());
         
-        for(GImage img : imgs) {
+        for(HImageInfo img : imgs) {
             if(img.hasTag("vertical")) {
                 end.add(img);
             } else {
@@ -437,7 +437,7 @@ final class FolderViewer extends UIView {
             }
         }
             
-        for(GImage img : end)
+        for(HImageInfo img : end)
             start.add(img);
         gal.addImages(start);
 
@@ -476,11 +476,11 @@ final class FolderViewer extends UIView {
         }
         dbInterface.checkActiveVerticality(1.0, 1.0, true);
 
-        ArrayList<GFolder> start = new ArrayList<>();
+        ArrayList<HFolderInfo> start = new ArrayList<>();
         for(FolderEntry f : folders)
         {
         	//TODO
-            GFolder gfolder = dbInterface.getActiveDatabase().getRootFolderByPath(f.getRoot() + f.getPath() + "\\");
+            HFolderInfo gfolder = dbInterface.getActiveDatabase().getRootFolderByPath(f.getRoot() + f.getPath() + "\\");
             f.setFolder(gfolder);
             if(gfolder != null)
                 start.add(gfolder);
@@ -498,13 +498,13 @@ final class FolderViewer extends UIView {
     {
     	//TODO
         Gallery gal = new Gallery(dbInterface.getActiveDatabase());
-        ArrayList<GImage> list = new ArrayList<>();
+        ArrayList<HImageInfo> list = new ArrayList<>();
         //TODO
         System.out.println(dbInterface.getActiveDatabase().getImageLists().size());
         //TODO
         for(GImageList gil : dbInterface.getActiveDatabase().getImageLists())
         {
-            for(GImage img : gil.getImages())
+            for(HImageInfo img : gil.getImages())
             {
                 list.add(img);
             }
@@ -537,7 +537,7 @@ final class FolderViewer extends UIView {
         String location = "G:\\New Folder (3)\\";
         int counter = 0;
         ArrayList<Process> procs = new ArrayList<>();
-        for(GImage img : dbInterface.getActiveImages())
+        for(HImageInfo img : dbInterface.getActiveImages())
         {
             if(!img.hasTag("fav"))
                 continue;
@@ -620,7 +620,7 @@ final class FolderViewer extends UIView {
             	dbInterface.loadDatabase(fileName, true, false);
             }
         	//TODO
-            GFolder folder = dbInterface.getActiveDatabase().getFolderByPath(listOfFiles[i].getAbsolutePath() + "\\");
+            HFolderInfo folder = dbInterface.getActiveDatabase().getFolderByPath(listOfFiles[i].getAbsolutePath() + "\\");
             res.add(new FolderEntry(root, listOfFiles[i].getName(), folder, exists));
         }
         

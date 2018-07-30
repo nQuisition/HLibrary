@@ -23,12 +23,12 @@ import java.text.*;
  */
 public class Gallery
 {
-    private List<GImage> images;
+    private List<HImageInfo> images;
     private IntegerProperty curimg = new SimpleIntegerProperty(-1) {
     	
     };
     private int numcache = 2;
-    private List<GImage> cached = new ArrayList<>();
+    private List<HImageInfo> cached = new ArrayList<>();
     
     public static final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
     
@@ -40,9 +40,9 @@ public class Gallery
         db = d;
     }
     
-    public void addImages(List<GImage> imgs)
+    public void addImages(List<HImageInfo> imgs)
     {
-        for(GImage img : imgs)
+        for(HImageInfo img : imgs)
             images.add(img);
     }
     
@@ -147,7 +147,7 @@ public class Gallery
         if(images.size() <= 0)
             return;
         int ci = curimg.get();
-        GFolder f = images.get(ci).getParent();
+        HFolderInfo f = images.get(ci).getParent();
         int size = images.size();
         for(int i = 1; i < size; i++)
         {
@@ -183,7 +183,7 @@ public class Gallery
     {
         if(images.size() <= 0)
             return;
-        GFolder f = this.images.get(curimg.get()).getParent();
+        HFolderInfo f = this.images.get(curimg.get()).getParent();
         int ci = curimg.get();
         int size = this.images.size();
         String targetOrientation = this.images.get(curimg.get()).hasTag("vertical")?"horizontal":"vertical";
@@ -201,7 +201,7 @@ public class Gallery
     
     public int rewindFolder(int pos, boolean fav)
     {
-        GFolder f = images.get(pos).getParent();
+        HFolderInfo f = images.get(pos).getParent();
         int index = pos;
         int size = images.size();
         for(int i = 1; i < size; i++)
@@ -223,8 +223,8 @@ public class Gallery
         return -1;
     }
     
-    public Map<GImage, Integer> getFavs() {
-    	Map<GImage, Integer> res = new HashMap<>();
+    public Map<HImageInfo, Integer> getFavs() {
+    	Map<HImageInfo, Integer> res = new HashMap<>();
     	for(int i = 0; i < images.size(); i++) {
     		if(images.get(i).hasTag("fav"))
     			res.put(images.get(i), i);
@@ -313,7 +313,7 @@ public class Gallery
     
     //TODO maybe possible to do swaps without giving
     //GImage objects to viewer?
-    public GImage getCurrentGImage()
+    public HImageInfo getCurrentGImage()
     {
         if(curimg.get() < 0 || images.size() <= 0)
             return null;
@@ -326,7 +326,7 @@ public class Gallery
      * @param img2 image to link to
      * @return 
      */
-    public int linkTo(GImage img1, GImage img2)
+    public int linkTo(HImageInfo img1, HImageInfo img2)
     {
         int res = db.addToList(img1, img2);
         if(res != 0)
@@ -345,19 +345,19 @@ public class Gallery
         return 0;
     }
     
-    public int linkToCurrent(GImage img)
+    public int linkToCurrent(HImageInfo img)
     {
         if(curimg.get() < 0 || images.size() <= 0)
             return -1000;
-        GImage cur = images.get(curimg.get());
+        HImageInfo cur = images.get(curimg.get());
         return linkTo(img, cur);
     }
     
-    public int moveAfterCurrent(GImage img)
+    public int moveAfterCurrent(HImageInfo img)
     {
         if(curimg.get() < 0 || images.size() <= 0)
             return -1000;
-        GImage cur = images.get(curimg.get());
+        HImageInfo cur = images.get(curimg.get());
         //TODO allow moving even though different folders?
         if(cur.getParent() != img.getParent())
             return 1;
@@ -388,7 +388,7 @@ public class Gallery
         return 0;
     }
     
-    public int locate(GImage img)
+    public int locate(HImageInfo img)
     {
         for(int i = 0; i < images.size(); i++)
             if(img == images.get(i))
@@ -400,7 +400,7 @@ public class Gallery
     {
         if(curimg.get() < 0 || images.size() <= 0)
             return "";
-        GImage current = images.get(curimg.get());
+        HImageInfo current = images.get(curimg.get());
         return (current.getParent()==null)?current.getName():
                 current.getParent().getPath()+current.getName();
     }
@@ -420,8 +420,8 @@ public class Gallery
     {
     	if(curimg.get() < 0 || images.size() <= 0)
             return new String[]{"", ""};
-    	GImage current = images.get(curimg.get());
-    	GFolder topParent = current.getTopLevelParent();
+    	HImageInfo current = images.get(curimg.get());
+    	HFolderInfo topParent = current.getTopLevelParent();
     	int num = current.isOnTopLevel() ? 2 : 3;
     	String[] res = new String[num];
     	res[num-1] = current.getName();
@@ -463,7 +463,7 @@ public class Gallery
     public int getCurrentPositionWithinFolder()
     {
     	//TODO better way?
-    	GFolder curFolder = images.get(curimg.get()).getParent();
+    	HFolderInfo curFolder = images.get(curimg.get()).getParent();
     	int index = curimg.get();
     	while(true)
     	{
@@ -485,7 +485,7 @@ public class Gallery
     public int getCurrentFolderSize()
     {
     	//TODO better way?
-    	GFolder curFolder = images.get(curimg.get()).getParent();
+    	HFolderInfo curFolder = images.get(curimg.get()).getParent();
     	int index = curimg.get();
     	int start = 0;
     	while(true)
@@ -547,7 +547,7 @@ public class Gallery
     {
         if(curimg.get() < 0 || images.size() <= 0)
             return;
-        GImage cur = images.get(curimg.get());
+        HImageInfo cur = images.get(curimg.get());
         if(cur.hasTag("mixed"))
         {
             cur.dropTag("mixed");

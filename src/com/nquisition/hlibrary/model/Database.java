@@ -40,7 +40,7 @@ public class Database
     public static final transient String FOLDER_END = ">>";
     public static final transient String FOLDER_ROOT = "*";
     
-    private List<GFolder> folders;
+    private List<HFolderInfo> folders;
     //TODO untransient, fix unnecessary info in GImage
     private transient List<GImageList> lists;
     private TagDictionary dict;
@@ -58,7 +58,7 @@ public class Database
     //TODO for testing purposes
     public void findArtists()
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
         {
             String nm = f.getPath();
             if(nm.endsWith("\\"))
@@ -100,7 +100,7 @@ public class Database
     
     public void nullifyEmptyStrings()
     {
-    	for(GFolder folder : folders)
+    	for(HFolderInfo folder : folders)
     		folder.nullifyEmptyStrings();
     	for(GImageList list : lists)
     		list.nullifyEmptyStrings();
@@ -111,11 +111,11 @@ public class Database
     	this.dict = dict;
     }
     
-    public GFolder getFolderByPath(String p)
+    public HFolderInfo getFolderByPath(String p)
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
         {
-            GFolder res = f.getFolderByPath(p, true);
+            HFolderInfo res = f.getFolderByPath(p, true);
             if(res != null)
                 return res;
         }
@@ -124,7 +124,7 @@ public class Database
     
     public boolean isFolderAlreadyAdded(String path)
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
         {
             if(f.getPath().equalsIgnoreCase(path))
                 return true;
@@ -132,9 +132,9 @@ public class Database
         return false;
     }
     
-    public GFolder getRootFolderByPath(String path)
+    public HFolderInfo getRootFolderByPath(String path)
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
         {
             if(f.getPath().equalsIgnoreCase(path))
                 return f;
@@ -143,7 +143,7 @@ public class Database
     }
     
     //TODO probably move to GFolder class
-    public GFolder createFolder(String p, GFolder par)
+    public HFolderInfo createFolder(String p, HFolderInfo par)
     {
         int pos = p.indexOf(DATA_SEPARATOR);
         String name = p;
@@ -153,7 +153,7 @@ public class Database
             name = p.substring(0, pos);
             params = p.substring(pos).replace(DATA_SEPARATOR, " ").trim();
         }
-        GFolder res = new GFolder(name, par);
+        HFolderInfo res = new HFolderInfo(name, par);
         if(par != null)
             par.addSubFolder(res);
         
@@ -166,24 +166,24 @@ public class Database
         return res;
     }
     
-    public void addGFolder(GFolder folder, boolean check)
+    public void addGFolder(HFolderInfo folder, boolean check)
     {
     	if(check)
-    		for(GFolder f : folders)
+    		for(HFolderInfo f : folders)
     			if(f.getPath().equals(folder.getPath()))
     				return;
     	folders.add(folder);
     }
     
-    public GFolder getAddFolder(String path, GFolder par, boolean root)
+    public HFolderInfo getAddFolder(String path, HFolderInfo par, boolean root)
     {
-        GFolder f = null;
+        HFolderInfo f = null;
         if(par != null)
         {
             f = par.getFolderByPath(path, false);
             if(f == null)
             {
-                f = new GFolder(path);
+                f = new HFolderInfo(path);
                 par.addSubFolder(f);
             }
         }
@@ -192,7 +192,7 @@ public class Database
             if(!this.isFolderAlreadyAdded(path))
             {
                 if(par == null)
-                    f = new GFolder(path);
+                    f = new HFolderInfo(path);
                 folders.add(f);
             }
             else
@@ -259,13 +259,13 @@ public class Database
     }
     
     //TODO okay to leave it private? Need it at all?
-    private int addDirectory(String p, GFolder f, int maxd)
+    private int addDirectory(String p, HFolderInfo f, int maxd)
     {
         return this.addDirectory(new File(p), f, 0, maxd);
     }
     
     //TODO okay to leave it private?
-    private int addDirectory(File p, GFolder f, int d, int maxd)
+    private int addDirectory(File p, HFolderInfo f, int d, int maxd)
     {
         File[] listOfFiles = p.listFiles();
         Arrays.sort(listOfFiles, new WindowsExplorerFileComparator());
@@ -284,7 +284,7 @@ public class Database
             logger.error("Unable to get canonical path of \"" + p.getAbsolutePath() + "\"", e);
             return -1;
         }
-        GFolder curFolder = this.getAddFolder(ppath + "\\", f, isRoot);
+        HFolderInfo curFolder = this.getAddFolder(ppath + "\\", f, isRoot);
         
         int res = 0;
         
@@ -297,7 +297,7 @@ public class Database
                 if(testname.endsWith(".jpg")
                         || testname.endsWith(".jpeg") || testname.endsWith(".png"))
                 {
-                    GImage.create(curFolder, name, true, -1, true);
+                    HImageInfo.create(curFolder, name, true, -1, true);
                     res++;
                 }
             }
@@ -309,9 +309,9 @@ public class Database
         return res;
     }
     
-    public GImage getImageByID(int id)
+    public HImageInfo getImageByID(int id)
     {
-        for(GImage img : getImages())
+        for(HImageInfo img : getImages())
             if(img.getID() == id)
                 return img;
         return null;
@@ -319,7 +319,7 @@ public class Database
     
     public void printRootFolders()
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
         {
             System.out.println(f.getPath());
         }
@@ -330,11 +330,11 @@ public class Database
         folders.get(pos).printFolderRecursive(0);
     }
     
-    public ArrayList<GImage> getImages()
+    public ArrayList<HImageInfo> getImages()
     {
         FolderListPair flp = this.getRootFolders();
-        ArrayList<GImage> res = new ArrayList<>();
-        for(GFolder f : flp.fldrs)
+        ArrayList<HImageInfo> res = new ArrayList<>();
+        for(HFolderInfo f : flp.fldrs)
         {
             //TODO passing arraylist to be modified.. No good?
             f.getAllImages(res);
@@ -347,7 +347,7 @@ public class Database
         return lists;
     }
     
-    public List<GFolder> getFolders()
+    public List<HFolderInfo> getFolders()
     {
         return folders;
     }
@@ -362,20 +362,20 @@ public class Database
     {
         FolderListPair pair = new FolderListPair();
         
-        ArrayList<GFolder> fldrs = new ArrayList<>();
-        for(GFolder f : folders)
+        ArrayList<HFolderInfo> fldrs = new ArrayList<>();
+        for(HFolderInfo f : folders)
             fldrs.add(f);
-        ArrayList<GFolder> roots = new ArrayList<>();
+        ArrayList<HFolderInfo> roots = new ArrayList<>();
         int j = 0;
         while(j < fldrs.size())
         {
-            GFolder f = fldrs.get(j);
+            HFolderInfo f = fldrs.get(j);
             boolean flag = false;
             for(int i = 0; i < fldrs.size(); i++)
             {
                 if(i == j)
                     continue;
-                GFolder f1 = fldrs.get(i);
+                HFolderInfo f1 = fldrs.get(i);
                 //f1 contains f as subfolder
                 if(f1.getFolderByPath(f.getPath(), true) != null)
                 {
@@ -411,7 +411,7 @@ public class Database
 
             FolderListPair pair = this.getRootFolders();
 
-            for(GFolder f : pair.fldrs)
+            for(HFolderInfo f : pair.fldrs)
             {
                 this.writeFolder(f, pair.roots, bw, true);
             }
@@ -425,7 +425,7 @@ public class Database
         return 0;
     }
     
-    private void writeFolder(GFolder f, List<GFolder> roots, 
+    private void writeFolder(HFolderInfo f, List<HFolderInfo> roots, 
             BufferedWriter bw, boolean initial) throws IOException
     {
         String str = FOLDER_START;
@@ -445,15 +445,15 @@ public class Database
         }
         str += f.getString() + "\n";
         bw.write(str);
-        for(GImage img : f.getImages())
+        for(HImageInfo img : f.getImages())
             bw.write(img.getString() + "\n");
-        for(GFolder folder : f.getSubFolders())
+        for(HFolderInfo folder : f.getSubFolders())
             this.writeFolder(folder, roots, bw, false);
         bw.write(FOLDER_END + "\n");
     }
     
     public void subInPaths(String subFrom, String subTo) {
-    	for(GFolder folder : folders) {
+    	for(HFolderInfo folder : folders) {
     		folder.subInPaths(subFrom, subTo);
     	}
     }
@@ -492,7 +492,7 @@ public class Database
             dict.setLocation(line);
             dict.loadDict();
 
-            GFolder curFolder = null;
+            HFolderInfo curFolder = null;
             while((line = br.readLine()) != null)
             {
                  if(line.startsWith(FOLDER_START))
@@ -515,7 +515,7 @@ public class Database
                  }
                  else
                  {
-                     GImage.fromString(curFolder, line, true, this);
+                     HImageInfo.fromString(curFolder, line, true, this);
                  }
             }
             br.close();
@@ -536,8 +536,8 @@ public class Database
     
     public void checkFiles()
     {
-        ArrayList<GImage> i = this.getImages();
-        for(GImage img : i)
+        ArrayList<HImageInfo> i = this.getImages();
+        for(HImageInfo img : i)
         {
             File f = new File(img.getFullPath());
             if(!f.exists())
@@ -546,9 +546,9 @@ public class Database
     }
     
     public void rescan() {
-    	List<GFolder> folders = this.getFolders();
-    	for(GFolder folder : folders) {
-    		List<GImage> images = folder.getImages();
+    	List<HFolderInfo> folders = this.getFolders();
+    	for(HFolderInfo folder : folders) {
+    		List<HImageInfo> images = folder.getImages();
     		String path = folder.getPath();
     		File dir = new File(path);
     		File[] list = dir.listFiles();
@@ -570,10 +570,10 @@ public class Database
     
     public void purgeDatabase() throws IOException
     {
-        Iterator<GFolder> j = folders.iterator();
+        Iterator<HFolderInfo> j = folders.iterator();
         while (j.hasNext())
         {
-            GFolder f = j.next();
+            HFolderInfo f = j.next();
             System.out.println("Purging " + f.getPath());
             f.purge(true);
             if(!f.folderExists())
@@ -583,13 +583,13 @@ public class Database
     
     public void dropOrientationTags()
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
             dropOrientationTags(f);
     }
     
-    public void dropOrientationTags(GFolder f)
+    public void dropOrientationTags(HFolderInfo f)
     {
-        for(GImage img : f.getImages())
+        for(HImageInfo img : f.getImages())
         {
             img.dropTag("vertical");
             img.dropTag("horizontal");
@@ -597,13 +597,13 @@ public class Database
             img.dropTag("horizontal_forced");
             img.dropTag("vertical_forced");
         }
-        for(GFolder fld : f.getSubFolders())
+        for(HFolderInfo fld : f.getSubFolders())
             dropOrientationTags(fld);
     }
     
     public void checkVerticality(double tV, double tH, boolean nameOnly)
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
         {
             //System.out.println("--------------------------------------------" + f.getPath());
             f.checkVerticality(tV, tH, nameOnly, true);
@@ -612,20 +612,20 @@ public class Database
     
     public void rotateVertical(double tV, int sleepTime)
     {
-        for(GFolder f : folders)
+        for(HFolderInfo f : folders)
             rotateVertical(f, tV, sleepTime);
     }
     
-    public void rotateVertical(GFolder f, double tV, int sleepTime)
+    public void rotateVertical(HFolderInfo f, double tV, int sleepTime)
     {
-        for(GImage img : f.getImages())
+        for(HImageInfo img : f.getImages())
         {
             if(img.hasTag("vertical") && Utils.checkImageVertical(img, tV, 1.0) == 1)
             {
                 img.rotate(true, sleepTime);
             }
         }
-        for(GFolder fld : f.getSubFolders())
+        for(HFolderInfo fld : f.getSubFolders())
             rotateVertical(fld, tV, sleepTime);
     }
     
@@ -634,7 +634,7 @@ public class Database
      * @param img1 image to link
      * @param img2 image to link to
      */
-    public int addToList(GImage img1, GImage img2)
+    public int addToList(HImageInfo img1, HImageInfo img2)
     {
         int res = 0;
         if(img1 == null || img2 == null)
@@ -673,11 +673,11 @@ public class Database
     }
     
     //FIXME redo - this is currently for testing only
-    public Map<GImage, List<GImage>> computeSimilarityStrings() throws IOException
+    public Map<HImageInfo, List<HImageInfo>> computeSimilarityStrings() throws IOException
     {
         //TODO use Properties
         BufferedWriter bw = new BufferedWriter(new FileWriter(new File("C:\\Test\\file_simil.txt")));
-        ArrayList<GImage> images = this.getImages();
+        ArrayList<HImageInfo> images = this.getImages();
         for(int i = 0; i < images.size(); i++)
         {
         	if(images.get(i).isSimilarityBytesComputed()) {
@@ -692,11 +692,11 @@ public class Database
             //    bw.write(i+1 + "/1000 - " + images.get(i).getSimilarityString().length() + " :: " + images.get(i).getSimilarityString() + "\n");
         }
         bw.close();
-        Map<GImage, List<GImage>> res = new HashMap<>();
+        Map<HImageInfo, List<HImageInfo>> res = new HashMap<>();
         //Map<GImage, List<GImage>> res = Collections.synchronizedMap(new HashMap<>());
         for(int i = 0; i < images.size(); i++)
         {
-            GImage img = images.get(i);
+            HImageInfo img = images.get(i);
             if(img.getWhiteness() >= 0.99d)
             	continue;
             //System.out.println(i+1+"/1000 " + img.getFullPath());
@@ -748,7 +748,7 @@ public class Database
     }
     
     public void computeWhiteness() {
-    	for(GImage img : this.getImages())
+    	for(HImageInfo img : this.getImages())
     		img.computeWhiteness();
     }
     
@@ -758,22 +758,22 @@ public class Database
     
     public void sortFolders()
     {
-        Comparator<GFolder> comp = new CreationTimeGFolderComparator();
+        Comparator<HFolderInfo> comp = new CreationTimeGFolderComparator();
         Collections.sort(this.folders, comp);
-        for(GFolder f : this.folders)
+        for(HFolderInfo f : this.folders)
             f.sortSubfolders(comp);
     }
     
     //TODO temp
     public void sortImagesByCreated() {
-    	Comparator<GImage> comp = new CreationTimeGImageComparator();
-        for(GFolder f : this.folders)
+    	Comparator<HImageInfo> comp = new CreationTimeGImageComparator();
+        for(HFolderInfo f : this.folders)
             f.sortImages(comp);
     }
 }
 
 class FolderListPair
 {
-    public List<GFolder> fldrs;
-    public List<GFolder> roots;
+    public List<HFolderInfo> fldrs;
+    public List<HFolderInfo> roots;
 }

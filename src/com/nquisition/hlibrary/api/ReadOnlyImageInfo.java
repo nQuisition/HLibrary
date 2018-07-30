@@ -2,11 +2,11 @@ package com.nquisition.hlibrary.api;
 
 import java.io.IOException;
 
-public interface IGImage extends IGEntry {
+public interface ReadOnlyImageInfo extends ReadOnlyEntryInfo {
 	String getName();
 	String getFullPath();
-	IGFolder getParent();
+	ReadOnlyFolderInfo getParent();
 	boolean isOnTopLevel();
-	boolean computeSimilarity(boolean forceRecompute) throws IOException;
+	//boolean computeSimilarity(boolean forceRecompute) throws IOException;
 	//TODO need something like getSimilarityBytes
 }

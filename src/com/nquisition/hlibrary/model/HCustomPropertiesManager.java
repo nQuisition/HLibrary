@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.google.gson.stream.JsonReader;
 import com.nquisition.hlibrary.api.CustomPropertiesManager;
-import com.nquisition.hlibrary.api.IGEntry;
+import com.nquisition.hlibrary.api.ReadOnlyEntryInfo;
 import com.nquisition.hlibrary.api.PropertyProvider;
 
 public class HCustomPropertiesManager implements CustomPropertiesManager {
@@ -32,7 +32,7 @@ public class HCustomPropertiesManager implements CustomPropertiesManager {
 	}
 
 	@Override
-	public void readPropertyFromJson(IGEntry entry, String propName, JsonReader reader) throws IOException {
+	public void readPropertyFromJson(ReadOnlyEntryInfo entry, String propName, JsonReader reader) throws IOException {
 		PropertyProvider provider = providerProps.get(propName);
 		if(provider == null) {
 			//FIXME need to somehow save props even if the plugin that created them is unavailable!

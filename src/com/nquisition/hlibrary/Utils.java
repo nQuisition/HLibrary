@@ -5,7 +5,7 @@
  */
 package com.nquisition.hlibrary;
 
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HImageInfo;
 import java.io.*;
 import java.util.*;
 import java.nio.file.*;
@@ -107,7 +107,7 @@ public class Utils
         }
     }
     
-    public static int checkImageVertical(GImage img, double thresholdV, double thresholdH)
+    public static int checkImageVertical(HImageInfo img, double thresholdV, double thresholdH)
     {
         try
         {

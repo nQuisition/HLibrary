@@ -18,7 +18,7 @@ import com.nquisition.hlibrary.api.UIView;
 import com.nquisition.hlibrary.fxutil.HFXFactory;
 import com.nquisition.hlibrary.fxutil.HStyleSheet;
 import com.nquisition.hlibrary.model.DatabaseInterface;
-import com.nquisition.hlibrary.model.GImage;
+import com.nquisition.hlibrary.model.HImageInfo;
 import com.nquisition.hlibrary.model.Gallery;
 
 import javafx.animation.FadeTransition;
@@ -105,9 +105,9 @@ final class GalleryViewer extends UIView
     private boolean dragging = false;
     private double dragStartX = 0.0, dragStartY = 0.0;
     
-    private GImage selected = null;
-    private GImage previmg = null, curimg = null;
-    private ArrayList<GImage> linkChain = null;
+    private HImageInfo selected = null;
+    private HImageInfo previmg = null, curimg = null;
+    private ArrayList<HImageInfo> linkChain = null;
     
     private BooleanProperty tagging = new SimpleBooleanProperty(false);
     private BooleanProperty forceRotate = new SimpleBooleanProperty(false);
@@ -470,7 +470,7 @@ final class GalleryViewer extends UIView
             linkChain = new ArrayList<>();
             linkIndicator.setVisible(true);
         }
-        GImage cur = gal.getCurrentGImage();
+        HImageInfo cur = gal.getCurrentGImage();
         int pos = linkChainContainsID(cur.getID());
         if(pos >= 0)
         {
@@ -1469,7 +1469,7 @@ final class GalleryViewer extends UIView
     
     private class ThumbViewer {
     	private StackPane thumbPane;
-    	Map<GImage, Integer> favs;
+    	Map<HImageInfo, Integer> favs;
     	List<HImageFrame> frames;
     	
     	private HBox thumbBox;
@@ -1519,11 +1519,11 @@ final class GalleryViewer extends UIView
     		
     		frames = new ArrayList<>();
     		
-    		ArrayList<Entry<GImage, Integer>> favsList = new ArrayList<>();
+    		ArrayList<Entry<HImageInfo, Integer>> favsList = new ArrayList<>();
     		favsList.addAll(favs.entrySet());
     		favsList.sort((a,b) -> Integer.compare(a.getValue(), b.getValue()));
     		
-    		for(Entry<GImage, Integer> entry : favsList) {
+    		for(Entry<HImageInfo, Integer> entry : favsList) {
     			HImageFrame frame = new HImageFrame(entry.getKey(), entry.getValue(), thumbSize);
     			
     			frame.setBorderVisible(true);

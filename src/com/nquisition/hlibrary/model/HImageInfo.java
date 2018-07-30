@@ -20,20 +20,20 @@ import java.awt.*;
 import java.awt.geom.*;
 import uk.co.jaimon.test.SimpleImageInfo;
 import com.idrsolutions.image.png.*;
-import com.nquisition.hlibrary.api.IGImage;
+import com.nquisition.hlibrary.api.ReadOnlyImageInfo;
 import com.nquisition.util.FileUtils;
 
 /**
  *
  * @author Master
  */
-public class GImage extends GEntry implements IGImage
+public class HImageInfo extends HEntryInfo implements ReadOnlyImageInfo
 {
     private static int NEXTID = 0;
     private int id;
     private String name;
     private transient javafx.scene.image.Image img = null;
-    private transient GFolder parent;
+    private transient HFolderInfo parent;
     //private ArrayList<String> tags = new ArrayList<String>();
     private transient GImageList list = null;
     //FIXME quick and dirty fix, mb serialize GImageList's instead?
@@ -56,7 +56,7 @@ public class GImage extends GEntry implements IGImage
         return res;
     }
     
-    public GImage()
+    public HImageInfo()
     {
     	this.resetTags();
         name = "";
@@ -64,7 +64,7 @@ public class GImage extends GEntry implements IGImage
         id = -1;
     }
     
-    public GImage(String p)
+    public HImageInfo(String p)
     {
         this.resetTags();
         name = p;
@@ -73,7 +73,7 @@ public class GImage extends GEntry implements IGImage
         NEXTID++;
     }
     
-    public GImage(String n, GFolder p)
+    public HImageInfo(String n, HFolderInfo p)
     {
         this.resetTags();
         name = n;
@@ -82,7 +82,7 @@ public class GImage extends GEntry implements IGImage
         NEXTID++;
     }
     
-    public GImage(String n, GFolder p, int id)
+    public HImageInfo(String n, HFolderInfo p, int id)
     {
         this.resetTags();
         name = n;
@@ -138,12 +138,12 @@ public class GImage extends GEntry implements IGImage
     }
     
     @Override
-	public GFolder getParent()
+	public HFolderInfo getParent()
     {
         return parent;
     }
     
-    public GFolder getTopLevelParent()
+    public HFolderInfo getTopLevelParent()
     {
     	return parent==null?null:parent.getTopLevelParent();
     }
@@ -183,20 +183,20 @@ public class GImage extends GEntry implements IGImage
         return res.toString();
     }
     
-    public static GImage create(GFolder f, String name, boolean checkFileExists, int id, boolean addedNow)
+    public static HImageInfo create(HFolderInfo f, String name, boolean checkFileExists, int id, boolean addedNow)
     {
         if(checkFileExists)
         {
-            List<GImage> images = f.getImages();
-            for(GImage gi : images)
+            List<HImageInfo> images = f.getImages();
+            for(HImageInfo gi : images)
                 if(gi.getName().equalsIgnoreCase(name))
                     return null;
         }
-        GImage img;
+        HImageInfo img;
         if(id <= -1)
-            img = new GImage(name, f);
+            img = new HImageInfo(name, f);
         else
-            img = new GImage(name, f, id);
+            img = new HImageInfo(name, f, id);
         if(addedNow)
             img.setAddedNow();
         f.addImage(img);
@@ -204,7 +204,7 @@ public class GImage extends GEntry implements IGImage
     }
     
     @Deprecated
-    public static GImage fromString(GFolder f, String str, boolean checkFileExists, Database db)
+    public static HImageInfo fromString(HFolderInfo f, String str, boolean checkFileExists, Database db)
     {
         String line = str;
         String separator = Database.DATA_SEPARATOR;
@@ -228,10 +228,10 @@ public class GImage extends GEntry implements IGImage
         line = line.substring(line.indexOf(separator)+sepLength);
         int rViewcount = Integer.parseInt(line.substring(0, line.indexOf(separator)));
         line = line.substring(line.indexOf(separator)+sepLength);
-        String rComment = line.substring(0, line.indexOf(GImage.COMMENT_SEPARATOR));
-        line = line.substring(line.indexOf(GImage.COMMENT_SEPARATOR)+GImage.COMMENT_SEPARATOR.length()+sepLength);
+        String rComment = line.substring(0, line.indexOf(HImageInfo.COMMENT_SEPARATOR));
+        line = line.substring(line.indexOf(HImageInfo.COMMENT_SEPARATOR)+HImageInfo.COMMENT_SEPARATOR.length()+sepLength);
         
-        GImage img = GImage.create(f, rName, checkFileExists, rId, false);
+        HImageInfo img = HImageInfo.create(f, rName, checkFileExists, rId, false);
         if(rListid == -1)
             img.setList(null);
         else
@@ -301,7 +301,7 @@ public class GImage extends GEntry implements IGImage
     	return !(similarityBytes == null || similarityBytes.length != RESOLUTION*RESOLUTION);
     }
     
-    public int differenceFrom(GImage img, int threshold, boolean orientation)
+    public int differenceFrom(HImageInfo img, int threshold, boolean orientation)
     {
         int res = 0;
         if(similarityBytes == null || img == null)
@@ -339,7 +339,7 @@ public class GImage extends GEntry implements IGImage
         return Math.min(res, Math.min(res1, res2));
     }
     
-    @Override
+    //@Override
 	public boolean computeSimilarity(boolean forceRecompute) throws IOException
     {
     	if((similarityBytes == null || similarityBytes.length != RESOLUTION*RESOLUTION) && similarityString != null) {
@@ -445,7 +445,7 @@ public class GImage extends GEntry implements IGImage
     	NEXTID = NEXTID>id?NEXTID:id+1;
     }
     
-    public void setParent(GFolder parent)
+    public void setParent(HFolderInfo parent)
     {
     	this.parent = parent;
     }
